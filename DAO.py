@@ -295,7 +295,7 @@ class MessageDAO:
 			return returnedList
 			
 	#Function takes an integer MMSI value
-	#Returns a list of 5 ship documents in the form of (MMSI, IMO, Latitude, Longitude)
+	#Returns a list of ship documents in the form  {MMSI : '', Positions : [Lat : '', Long : ''], IMO : ''}
 	def read_last_five_positions(self, mmsi):
 		if self.test_mode:
 			try:
@@ -309,21 +309,32 @@ class MessageDAO:
         		mmsiInQuery.append(mmsi)
         		cnx = Mysql_connector.getConnection()
         		cursor = cnx.cursor(prepared=True)
-        		cursor.execute("""SELECT IMO, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
+        		cursor.execute("""SELECT am.MMSI, Latitude, Longitude, IMO FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
         		
-        		returnedList = cursor.fetchall()
-        		imo = 0
+        		queryList = cursor.fetchall()
+        		
+        		returnedList = []
         		
         		#Removes unwanted field in table
 			#Converts Latitude and Longitude values into float values
-        		for value in range(len(returnedList)):
-        			returnedList[value] = list(returnedList[value])
+        		for value in range(len(queryList)):
+        			queryList[value] = list(queryList[value])
         			
-        			returnedList[value][1] = float(returnedList[value][1])
-        			returnedList[value][2] = float(returnedList[value][2])
+        			queryList[value][1] = float(queryList[value][1])
+        			queryList[value][2] = float(queryList[value][2])
+        			
+        			latitude = str(queryList[value][1])
+        			longitude = str(queryList[value][2])
+        			
+        			imo = queryList[value][3]
+        			returnedList.append({'MMSI' : mmsi, 'Positions' : '[Lat : '+ latitude +', Long : '+longitude+']', 'IMO' : imo})
+				
         			
         		return returnedList
+        		
      
+     #Function takes an integer portID value
+     #Returns a list of ship documents in the form  {MMSI : '', Positions : [Lat : '', Long : ''], IMO : ''}
 	def read_ships_headed_to_port(self, portID):
 		if self.test_mode:
 			try:
@@ -335,16 +346,28 @@ class MessageDAO:
 			valuesForQuery.append(portID)
 			cnx = Mysql_connector.getConnection()
 			cursor = cnx.cursor(prepared=True)
-			cursor.execute(""" SELECT DISTINCT am.MMSI, Ts, AIS_IMO, pr.Latitude, pr.Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, STATIC_DATA as sd, PORT WHERE PORT.Id=5018 AND pr.AISMessage_Id=am.Id AND sd.DestinationPort_Id=PORT.Id AND sd.AIS_IMO=am.VesselIMO ORDER BY Ts; """)
+			cursor.execute(""" SELECT DISTINCT am.MMSI, Ts, pr.Latitude, pr.Longitude, AIS_IMO FROM POSITION_REPORT as pr, AIS_MESSAGE as am, STATIC_DATA as sd, PORT WHERE PORT.Id=5018 AND pr.AISMessage_Id=am.Id AND sd.DestinationPort_Id=PORT.Id AND sd.AIS_IMO=am.VesselIMO ORDER BY Ts; """)
 			
-			returnedList = cursor.fetchall()
+			queryList = cursor.fetchall()
 			
-			for value in range(len(returnedList)):
-				returnedList[value] = list(returnedList[value])
-				returnedList[value].pop(1)
+			returnedList = []
+			#Removes unwanted field in table
+			#Formats values into a dictionary
+			for value in range(len(queryList)):
+				queryList[value] = list(queryList[value])
+				mmsi = queryList[value][0]
+				queryList[value].pop(1)
+				
 
-				returnedList[value][2] = float(returnedList[value][2])
-				returnedList[value][3] = float(returnedList[value][3])
+				queryList[value][2] = float(queryList[value][2])
+				queryList[value][3] = float(queryList[value][3])
+				
+				latitude = str(queryList[value][1])
+				longitude = str(queryList[value][2])
+			
+				imo = queryList[value][3]
+				
+				returnedList.append({'MMSI' : mmsi, 'Positions' : '[Lat : '+ latitude +', Long : '+longitude+']', 'IMO' : imo})
 
 			return returnedList
 			
@@ -389,7 +412,7 @@ class Mysql_connector():
 
 class DAOTest (unittest.TestCase):
 
-	batch1 = """[ {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
+	batch1 = """[ {\"Timestamp\":\"2023-11-18T00:00:40.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
                 {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
                 {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240},
                 {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111923,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"BALTIC2 WINDFARM SW\",\"VesselType\":\"Undefined\",\"Length\":8,\"Breadth\":12,\"A\":4,\"B\":4,\"C\":4,\"D\":8},
@@ -538,22 +561,24 @@ class DAOTest (unittest.TestCase):
 	def test_read_last_five_positions2(self):
 		dao = MessageDAO()
 		testMMSI = 304858000
-		expectedArray = [[8214358.0, 55.21813, 13.375687],
-		[8214358.0, 55.21815, 13.375427],
-		[8214358.0, 55.218187, 13.374555],
-		[8214358.0, 55.218238, 13.373680],
-		[8214358.0, 55.218268, 13.373070]]
+		expectedArray = [{'MMSI' : 304858000, 'Positions' : '[Lat : 55.21813, Long : 13.375687]', 'IMO' : 8214358.0},
+		{'MMSI' : 304858000, 'Positions' : '[Lat : 55.21815, Long : 13.375427]', 'IMO' : 8214358.0},
+		{'MMSI' : 304858000 , 'Positions' : '[Lat : 55.218187, Long : 13.374555]', 'IMO' : 8214358.0},
+		{'MMSI' : 304858000, 'Positions' : '[Lat : 55.218238, Long : 13.37368]', 'IMO' : 8214358},
+		{'MMSI' : 304858000, 'Positions' : '[Lat : 55.218268, Long : 13.37307]', 'IMO' : 8214358}]
 		resultArray = dao.read_last_five_positions(testMMSI)
 		self.assertEqual(expectedArray, resultArray)
 		
 	def test_read_ships_headed_to_port2(self):
 		dao = MessageDAO()
 		testPortID = 5018
-		expectedArray = [[265011000, 8616087.0, 56.161562, 11.062797],
-		[265011000, 8616087.0, 56.161338, 11.062742],
-		[265011000, 8616087.0, 56.161087, 11.062687],
-	  	[265011000, 8616087.0, 56.16081, 11.062633]]
+		expectedArray = [{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161562, Long : 11.062797]', 'IMO' :8616087.0},
+		{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161338, Long : 11.062742]', 'IMO' :8616087.0},
+		{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161087, Long : 11.062687]', 'IMO' : 8616087.0},
+	  	{'MMSI' : 265011000, 'Positions' : '[Lat : 56.160810, Long : 11.062633]', 'IMO' : 8616087.0}]
 		resultArray = dao.read_ships_headed_to_port(testPortID)
+		
+
 		self.assertEqual(expectedArray, resultArray)
 
 
