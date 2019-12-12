@@ -323,8 +323,34 @@ class MessageDAO:
         			returnedList[value][2] = float(returnedList[value][2])
         			
         		return returnedList
-        		
-        		#dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
+     
+	def read_ships_headed_to_port(self, portID):
+		if self.test_mode:
+			try:
+				return int(portID)
+			except:
+				return -1
+		else:
+			valuesForQuery = []
+			valuesForQuery.append(portID)
+			cnx = Mysql_connector.getConnection()
+			cursor = cnx.cursor(prepared=True)
+			cursor.execute(""" SELECT DISTINCT am.MMSI, Ts, AIS_IMO, pr.Latitude, pr.Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, STATIC_DATA as sd, PORT WHERE PORT.Id=5018 AND pr.AISMessage_Id=am.Id AND sd.DestinationPort_Id=PORT.Id AND sd.AIS_IMO=am.VesselIMO ORDER BY Ts; """)
+			
+			returnedList = cursor.fetchall()
+			
+			for value in range(len(returnedList)):
+				returnedList[value] = list(returnedList[value])
+				returnedList[value].pop(1)
+
+				returnedList[value][2] = float(returnedList[value][2])
+				returnedList[value][3] = float(returnedList[value][3])
+
+			return returnedList
+			
+			
+     			
+     
 
 	#Converts timestamp values to work with mysql table insertion
 	def convert_time(self, timestamp):
@@ -433,6 +459,11 @@ class DAOTest (unittest.TestCase):
 		dao = MessageDAO(True)
 		result = dao.read_last_five_positions(3048580000)
 		self.assertTrue(type(result) is int)
+		
+	def test_read_ships_headed_to_port(self):
+		dao = MessageDAO(True)
+		result = dao.read_ships_headed_to_port(5018)
+		self.assertTrue(type(result) is int)
 
 	def test_convert_time(self):
 		dao = MessageDAO()
@@ -513,6 +544,16 @@ class DAOTest (unittest.TestCase):
 		[8214358.0, 55.218238, 13.373680],
 		[8214358.0, 55.218268, 13.373070]]
 		resultArray = dao.read_last_five_positions(testMMSI)
+		self.assertEqual(expectedArray, resultArray)
+		
+	def test_read_ships_headed_to_port2(self):
+		dao = MessageDAO()
+		testPortID = 5018
+		expectedArray = [[265011000, 8616087.0, 56.161562, 11.062797],
+		[265011000, 8616087.0, 56.161338, 11.062742],
+		[265011000, 8616087.0, 56.161087, 11.062687],
+	  	[265011000, 8616087.0, 56.16081, 11.062633]]
+		resultArray = dao.read_ships_headed_to_port(testPortID)
 		self.assertEqual(expectedArray, resultArray)
 
 
