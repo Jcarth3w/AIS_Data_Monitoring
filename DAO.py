@@ -454,21 +454,7 @@ class MessageDAO:
 			valuesForQuery.append(portID)
 			cnx = Mysql_connector.getConnection()
 			cursor = cnx.cursor(prepared=True)
-			#Checks how many matching ports are returned using the inputs,
-			#Then returns a list of port documents if there is more than one matching Port
-			cursor.execute("""SELECT * FROM PORT WHERE Name=%s AND Country=%s;""", valuesForQuery)
-			returnedList = cursor.fetchall()
-			if len(returnedList) > 1:
-				for value in range(len(returnedList)):
-					returnedList[value] = list((returnedList[value]))
-					returnedList[value].pop(6)
-
-					returnedList[value][4] = float(returnedList[value][4])
-					returnedList[value][5] = float(returnedList[value][5])
-				return returnedList
-
-			cursor.reset()
-			cursor.execute(""" SELECT DISTINCT am.MMSI, Ts, pr.Latitude, pr.Longitude, AIS_IMO FROM POSITION_REPORT as pr, AIS_MESSAGE as am, STATIC_DATA as sd, PORT WHERE PORT.Id=5018 AND pr.AISMessage_Id=am.Id AND sd.DestinationPort_Id=PORT.Id AND sd.AIS_IMO=am.VesselIMO ORDER BY Ts; """)
+			cursor.execute(""" SELECT DISTINCT am.MMSI, Ts, pr.Latitude, pr.Longitude, AIS_IMO FROM POSITION_REPORT as pr, AIS_MESSAGE as am, STATIC_DATA as sd, PORT WHERE PORT.Id=%s AND pr.AISMessage_Id=am.Id AND sd.DestinationPort_Id=PORT.Id AND sd.AIS_IMO=am.VesselIMO ORDER BY Ts;""", valuesForQuery)
 			
 			queryList = cursor.fetchall()
 			
@@ -542,9 +528,9 @@ class DAOTest (unittest.TestCase):
 				{\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257385000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.219403,13.127725]},\"Status\":\"Under way using engine\",\"RoT\":25.7,\"SoG\":12.3,\"CoG\":96.5,\"Heading\":101},
 				{\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":376503000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.519373,11.47914]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":7.6,\"CoG\":294.4,\"Heading\":290} ]"""
 
-	batch2 = """[{\"Timestamp\":\"2022-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
-				{\"Timestamp\":\"2022-12-06T14:56:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
-				{\"Timestamp\":\"2022-12-06T14:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240}]"""
+	batch2 = """[{\"Timestamp\":\"2018-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
+				{\"Timestamp\":\"2018-12-06T14:56:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
+				{\"Timestamp\":\"2018-12-06T14:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240}]"""
 
 	messageDocument = """{\"Timestamp\":\"2022-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":9999999,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"YAHOOTEST\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30}"""
 
@@ -641,21 +627,21 @@ class DAOTest (unittest.TestCase):
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
 		resultArray = dao.read_most_recent_positions()
-		self.assertEqual(list((219024178, 54.571808, 11.928697)), resultArray[0])
-		self.assertEqual(list((219015362, 57.120712, 8.599567)), resultArray[1])
+		self.assertEqual(list((266239000, 54.355473, 11.938282)), resultArray[0])
+		self.assertEqual(list((257820000, 54.677953, 12.56549)), resultArray[1])
 
 	def test_read_most_recent_pos_mmsi2(self):
 		dao = MessageDAO()
 		testMMSI = 304858000
 		resultArray = dao.read_most_recent_positions_MMSI(testMMSI)
-		self.assertEqual(list((304858000, 8214358, 55.21829, 13.372545)), resultArray[0])
+		self.assertEqual(list((304858000, 8214358, 55.21813, 13.375687)), resultArray[0])
 
 	def test_read_permanent_info2(self):
 		dao = MessageDAO()
 		testMMSI = 304858000
 		testIMO = 8214358
 		resultArray = dao.read_permanent_info(testMMSI, testIMO)
-		self.assertEqual(list((304858000, 8214358, 'St.Pauli', 55.21829, 13.372545)), resultArray[0])
+		self.assertEqual(list((304858000, 8214358, 'St.Pauli', 55.218332, 13.371672)), resultArray[0])
 
 	def test_read_port_with_name2(self):
 		dao = MessageDAO()
@@ -666,15 +652,17 @@ class DAOTest (unittest.TestCase):
 
 	def test_most_recent_in_tile2(self):
 		dao = MessageDAO()
-		expectedArray = [[220043000, 4026519, 57.120583, 8.599218],[220043000, 8996413, 57.120583, 8.599218]]
+		expectedArray1 = [219751000, 5362764, 57.122965, 8.601518]
+		expectedArray2 = [271043776, 9581019, 57.403747, 8.837135]
 		resultArray = dao.read_most_recent_in_tile(5139)
-		self.assertEqual(expectedArray, resultArray)
+		self.assertEqual(expectedArray1, resultArray[0])
+		self.assertEqual(expectedArray2, resultArray[1])
 
 	def test_read_positions_tile3_port2(self):
 		dao = MessageDAO()
-		expectedArray = [[219000647, 9080132, 55.04231, 9.423348]]
+		expectedArray = [219014875, 9548354, 55.042327, 9.424087]
 		resultArray = dao.read_positions_tile3_port("Aabenraa", "Denmark")
-		self.assertEqual(expectedArray, resultArray)
+		self.assertEqual(expectedArray, resultArray[0])
 
 	def test_pull_live_data(self):
 		#WILL NOT PASS UNLESS AIS MESSAGE SERVER IS RUNNING (index.js)
@@ -700,7 +688,7 @@ class DAOTest (unittest.TestCase):
 		expectedArray = [{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161562, Long : 11.062797]', 'IMO' :8616087.0},
 		{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161338, Long : 11.062742]', 'IMO' :8616087.0},
 		{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161087, Long : 11.062687]', 'IMO' : 8616087.0},
-		  {'MMSI' : 265011000, 'Positions' : '[Lat : 56.160810, Long : 11.062633]', 'IMO' : 8616087.0}]
+		{'MMSI' : 265011000, 'Positions' : '[Lat : 56.160810, Long : 11.062633]', 'IMO' : 8616087.0}]
 		resultArray = dao.read_ships_headed_to_port(testPortID)
 		
 
