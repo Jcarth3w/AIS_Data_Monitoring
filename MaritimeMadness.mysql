@@ -1,0 +1,5 @@
+drop database if exists MartimeMadness;
+
+create database MaritimeMadness;
+
+use MaritimeMadness
