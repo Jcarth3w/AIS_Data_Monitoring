@@ -3,11 +3,25 @@ import mysql.connector
 from mysql.connector import errorcode
 import unittest 
 
+
+
 class MessageDAO:
 	def __init__(self, test_mode=False):
-        self.is_test_mode=test_mode
-        
-    def inset_msg():
+		self.test_mode=test_mode
+		
+	def insert_messages(self, batch):
+		try:
+			array = json.loads(batch)
+		except Exception as e:
+			print(e)
+			return -1
+			
+		if self.test_mode:
+			return len(array)
+			
+		
+		
+		return -1
     	
 
 
@@ -33,15 +47,22 @@ class DAOTest (unittest.TestCase):
                 {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257385000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.219403,13.127725]},\"Status\":\"Under way using engine\",\"RoT\":25.7,\"SoG\":12.3,\"CoG\":96.5,\"Heading\":101},
                 {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":376503000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.519373,11.47914]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":7.6,\"CoG\":294.4,\"Heading\":290} ]"""
 
-	def test_insert_msg (self):
+	def test_insert_messages (self):
 		dao = MessageDAO(True)
 		
-		inserted_msg = dao.insert_msg()
+		inserted_messages = dao.insert_messages(self.batch)
+		self.assertTrue(type(inserted_messages) is int and inserted_messages > 0)
 		
+		
+	def test_insert_messages2 (self):
+		dao = MessageDAO(True)
+		array = json.loads( self.batch )
+		inserted_count = dao.insert_messages( array )
+		self.assertEqual( inserted_count, -1)
+		
+	def test_insert_messages3 (self):
 	
 	
-	
-
-
+unittest.main()
 
 
