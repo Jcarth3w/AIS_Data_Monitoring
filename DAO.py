@@ -34,6 +34,19 @@ class MessageDAO:
                 
 			
 		return -1
+		
+		
+	def delete_msg_timestamp (self):
+		pass
+		
+	def read_most_recent_positions(self, currentTime, timeStamp):
+		pass
+		
+	def read_most_recent_positions_MMSI(self, MMSI):
+		pass
+		
+	def read_permanent_info(self, MMSI):
+		pass
     	
 
 
@@ -45,7 +58,6 @@ class MessageDAO:
 	
 	
 ##################TESTS#####################
-
 
 
 
