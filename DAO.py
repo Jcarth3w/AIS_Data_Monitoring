@@ -18,9 +18,21 @@ class MessageDAO:
 			
 		if self.test_mode:
 			return len(array)
+		else:
+			statementsArray = []
+			for element in array:
+				if(element['MsgType']=='position_report'):
+					tempArray = []
+					for value in element.values():
+						tempArray.append(value)
+					statement = """INSERT INTO TABLE PositionReport VALUES("""
+					for element in tempArray:
+						statement = statement + str(element)+","
+					statement = statement[:-2]+')'
+					statementsArray.append(statement)
+			print(statementsArray)
+                
 			
-		
-		
 		return -1
     	
 
@@ -61,6 +73,9 @@ class DAOTest (unittest.TestCase):
 		self.assertEqual( inserted_count, -1)
 		
 	def test_insert_messages3 (self):
+		dao = MessageDAO(True)
+		
+		
 	
 	
 unittest.main()
