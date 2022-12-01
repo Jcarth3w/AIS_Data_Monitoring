@@ -19,21 +19,26 @@ class MessageDAO:
 		if self.test_mode:
 			return len(array)
 		else:
-			statementsArray = []
+			rowsArray = []
 			for element in array:
-				if(element['MsgType']=='position_report'):
-					tempArray = []
-					for value in element.values():
-						tempArray.append(value)
-					statement = """INSERT INTO TABLE PositionReport VALUES("""
-					for element in tempArray:
-						statement = statement + str(element)+","
-					statement = statement[:-2]+')'
-					statementsArray.append(statement)
-			print(statementsArray)
-                
+				singleRow = "ROW("
+				for value in element:
+					singleRow = singleRow + str(element[value]) + ', '
+				singleRow = singleRow[:-2] + ')'
+				rowsArray.append(singleRow)
 			
-		return -1
+
+			positionReportStatement = """INSERT INTO TABLE PositionReport VALUES("""
+			staticDataStatement = """INSERT INTO TABLE StaticData VALUES("""
+			for value in rowsArray:
+				if "position_report" in value:
+					positionReportStatement = positionReportStatement + value + ', '
+				elif "static_data" in value:
+					staticDataStatement = staticDataStatement + value + ', '
+			positionReportStatement = positionReportStatement[:-2] + ')'
+			staticDataStatement = staticDataStatement[:-2] + ')'
+			
+			return staticDataStatement, positionReportStatement
 		
 		
 	def delete_msg_timestamp (self):
@@ -85,7 +90,10 @@ class DAOTest (unittest.TestCase):
 		self.assertEqual( inserted_count, -1)
 		
 	def test_insert_messages3 (self):
-		dao = MessageDAO(True)
+		dao = MessageDAO(False)
+		statements = dao.insert_messages(self.batch)
+
+		self.assertEqual(statements[1], """INSERT INTO TABLE PositionReport VALUES(ROW(2020-11-18T00:00:00.000Z, Class A, 304858000, position_report, {'type': 'Point', 'coordinates': [55.218332, 13.371672]}, Under way using engine, 10.8, 94.3, 97), ROW(2020-11-18T00:00:00.000Z, Class A, 219005465, position_report, {'type': 'Point', 'coordinates': [54.572602, 11.929218]}, Under way using engine, 0, 0, 298.7, 203), ROW(2020-11-18T00:00:00.000Z, Class A, 257961000, position_report, {'type': 'Point', 'coordinates': [55.00316, 12.809015]}, Under way using engine, 0, 0.2, 225.6, 240), ROW(2020-11-18T00:00:00.000Z, Class A, 257385000, position_report, {'type': 'Point', 'coordinates': [55.219403, 13.127725]}, Under way using engine, 25.7, 12.3, 96.5, 101), ROW(2020-11-18T00:00:00.000Z, Class A, 376503000, position_report, {'type': 'Point', 'coordinates': [54.519373, 11.47914]}, Under way using engine, 0, 7.6, 294.4, 290))""")
 		
 		
 	
