@@ -50,7 +50,17 @@ class MessageDAO:
 		pass
 		
 	def read_permanent_info(self, MMSI):
-		pass
+		if self.test_mode:
+			try:
+				return int(MMSI)
+			except:
+				return -1
+		
+		try:
+			print("""SELECT * FROM 'STATIC_DATA' WHERE""MMSI"=%s""",MMSI)
+		except:
+			return -1
+
     	
 
 
@@ -124,6 +134,17 @@ class DAOTest (unittest.TestCase):
 	def test_delete_msg_timeStamp (self):
 		dao = MessageDAO(True)
 		deleted = dao.delete(msg)
+		
+		
+	def test_read_permanent_info(self):
+		dao = MessageDAO(True)
+		result = dao.read_permanent_info(3048580000)
+		self.assertTrue(result>0)
+		
+		
+		
+		
+		
 		
 	def test_connection (self):
 		con = Mysql_connector()
