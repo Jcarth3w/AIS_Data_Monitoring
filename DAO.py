@@ -1,4 +1,5 @@
 import json
+import configparser
 import mysql.connector
 from mysql.connector import errorcode
 import unittest 
@@ -8,6 +9,8 @@ import unittest
 class MessageDAO:
 	def __init__(self, test_mode=False):
 		self.test_mode=test_mode
+		self.Mysql_connector = Mysql_connector()
+		
 		
 	def insert_messages(self, batch):
 		try:
@@ -30,6 +33,7 @@ class MessageDAO:
 						statement = statement + str(element)+","
 					statement = statement[:-2]+')'
 					statementsArray.append(statement)
+			self.Mysql_connector.getConnection()
 			print(statementsArray)
                 
 			
@@ -50,7 +54,36 @@ class MessageDAO:
     	
 
 
+class Mysql_connector():
 	
+	def __init__(self):
+		config = configparser.ConfigParser()
+		config.read('config.ini')
+
+	def getConnection():
+		
+		try: 
+			return mysql.connector.connect(host = congif['mysqlDB']['host'],
+			password = ['mysqlDB']['password'], 
+			database = ['mysqlDB']['db'], 
+			user = ['mysqlDB']['user'])
+		
+		except mysql.connector.Error as err:
+			if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+				print("Something is wrong with your user name or password")
+			elif err.erno == errorcode.ER_BAD_DB_ERROR:
+				print("Database does not exist")
+			else:
+				print(err)
+			
+			
+	def execute (self, query):
+		cursor = self.cnx.cursor()
+		cursor.execute(query)
+		result = cursor.fetchall()
+		cursor.close()
+		
+		return result
 	
 	
 	
@@ -85,7 +118,25 @@ class DAOTest (unittest.TestCase):
 		self.assertEqual( inserted_count, -1)
 		
 	def test_insert_messages3 (self):
+		dao = MessageDAO()
+		
+		
+	def test_delete_msg_timeStamp (self):
 		dao = MessageDAO(True)
+		deleted = dao.delete(msg)
+		
+	def test_connection (self):
+		con = Mysql_connector()
+		cnx = con.getConnection
+		self.assertTrue(cnx)
+		
+	def test_execute():
+		testQuery = "SELECT IMO FROM VESSEL;"
+		con = Mysql_connector()
+		cnx = con.getConnection
+		result = self.cnx.exeute(testQuery)
+		self.assertTrue(len(result) > 0)
+		
 		
 		
 	
