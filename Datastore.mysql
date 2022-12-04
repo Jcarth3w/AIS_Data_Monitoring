@@ -1,0 +1,142 @@
+drop database if exists Datastore;
+
+create database Datastore;
+
+use Datastore;
+
+
+#Vessel Table
+create table VESSEL(
+	IMO mediumint unsigned, 
+	Flag varchar(30),
+	Name varchar(128),
+	Built smallint,
+	CallSign varchar(8),
+	Length smallint,
+	Breadth tinyint,
+	Tonnage mediumint, 
+	MMSI int,
+	Type varchar(30),
+	Status varchar(40),
+	Owner varchar(80),
+	primary key(IMO)
+);
+
+
+#Map Tile Tabale
+create table MAP_VIEW(
+	Id mediumint,
+	Name varchar(10),
+	LongitudeW decimal(9,6),
+	LatitudeS decimal(8,6),
+	LongitudeE decimal(9,6),
+	LatitudeN decimal(8,6),
+	Scale enum('1', '2', '3'),
+	RasterFile varchar(100),
+	ImageWidth smallint,
+	ImageHeight smallint,
+	ActualLongitudeW decimal(9,6),
+	ActualLatitudeS decimal(8,6),
+	ActualLongitudeE decimal(9,6),
+	ActualLatitudeN decimal(8,6),
+	ContainerMapView_Id mediumint,
+	foreign key (ContainerMapView_Id) references MAP_VIEW(Id),
+	primary key( Id )
+);
+
+
+#AIS_Message Table
+create table AIS_MESSAGE(
+	Id mediumint unsigned AUTO_INCREMENT
+	Timestamp datetime,
+	Class enum('Class A','Class B','AtoN','Base Station'),
+	MMSI int,
+	MessageType varchar(16)
+	primary key (Id)
+);
+
+
+#Port Table
+ create table PORT(
+ 	Id smallint,
+ 	LoCode varchar(5),
+ 	Name varchar(30),
+ 	Country varchar(15),
+ 	Longitude decimal(9,6),
+ 	Lattitude decimal(8,6),
+ 	Website varchar(60),
+ 	MapView1_Id mediumint,
+ 	MapView2_Id mediumint,
+ 	Mapview3_Id mediumint,
+ 	foreign key(MapView1_Id) references MAP_VIEW(Id),
+ 	foreign key(MapView2_Id) references MAP_VIEW(Id),
+ 	foreign key(MapView3_Id) references MAP_VIEW(Id),
+ 	primary key(Id)
+ );
+
+
+#Static_Data Table
+ create table STATIC_DATA(
+ 
+ 	AISMessage_Id mediumint unsigned,
+ 	AIS_IMO int,
+ 	CallSign varchar(8),
+ 	Name varchar(30),
+ 	DetinationPort_Id smallint,
+ 	foreign key (AISMessage_Id) references AIS_MESSAGE(Id),
+ 	primary key (AISMessage_Id)
+ );
+
+
+#Positon_Report Table
+create table POSITION_REPORT(
+	AISMessage_Id mediumint unsigned,
+	Longitude decimal(9,6),
+	Latitude decimal(8,6),
+	LastStaticData_Id mediumint unsigned,
+	MapView1_Id mediumint,
+	MapView2_Id mediumint,
+	MapView3_Id mediumint,
+	foreign key (AISMessage_Id) references AIS_MESSAGE(Id),
+	foreign key (LastStaticData_Id) references STATIC_DATA(AISMessage_Id),
+	foreign key (MapView1_Id) references MAP_VIEW(Id),
+	foreign key (MapView2_Id) references MAP_VIEW(Id),
+	foreign key (MapView3_Id) references MAP_VIEW(Id),
+	primary key (AISMessage_Id)
+);
+
+#User Table
+create table USER(
+	EmailAddress varchar(30),
+	Name varchar(20),
+	PasswordHash char(36),
+	ApplicationSetting1 bool,
+	ApplicationSetting2 varchar(50),
+	ApplicationSetting3 tinyint,
+	primary key (EmailAddress)
+);
+
+
+#Monitor_Port Table
+create table MONITOR_PORT(
+	User_EmailAddress varchar(30),
+	Port_Id smallint,
+	DateStarted datetime,
+	DateEnded datetime,
+	foreign key (User_EmailAddress) references USER(EmailAddress),
+	foreign key (Port_Id) references PORT(Id),
+	primary key (Port_Id)
+);
+
+
+
+#Monitor_Vessel Table
+create table MONITOR_VESSEL(
+	User_EmailAddress varchar(30),
+	Vessel_IMO mediumint unsigned,
+	DateStarted datetime,
+	DateEnded datetime,
+	foreign key (User_EmailAddress) references USER(EmailAddress),
+	foreign key (Vessel_IMO) references VESSEL(IMO),
+	primary key (Vessel_IMO)
+);
