@@ -4,7 +4,6 @@ import mysql.connector
 from mysql.connector import errorcode
 import unittest 
 
-id_counter = 1
 
 class MessageDAO:
 	
@@ -12,7 +11,8 @@ class MessageDAO:
 		self.test_mode=test_mode
 		self.Mysql_connector = Mysql_connector()
 		
-		
+	#function that inserts a batch of AIS Messages
+	#can be either position_report or static_data
 	def insert_messages(self, batch):
 		try:
 			
@@ -36,45 +36,62 @@ class MessageDAO:
 			#cursor.execute(staticDataStatement)
 			cursor.execute(positionReportStatement)
 			
+			cursor.executemany("INSERT INTO AIS_MESSAGE VALUES(%s, %s, %s)")
+						
 			cnx.commit()
 			
 			return cursor.rowcount
 	
+	
+	#helper function to create mysql statements
+	#accepts a loaded json array
 	def get_insert_statement(self, array):
-		rowsArray = []
+
+		#create a list of for each type of table entry
+		ais_message_list = []
+		static_data_list = []
+		position_report_list = []
+		
 		for message in array:
+			#extract all the AIS_MESSAGE  and add them to the ais_message list
 			timeStamp = message['Timestamp']
 			shipClass = message['Class']
 			mmsi = message['MMSI']
 			msgType = message['MessageType']
 	
+			ais_message_list.append(list(timeStamp, shipClass, mmsi, msgType))
+			
+			#if the message type is static data, extract all of the fields for static data
 			if msgType.equals("static_data"):
 				imo = message['IMO']
 				callsign = message['Callsign']
 				destination_id = message['Destination']
-
+				
+				static_data_list.append(list(imo, callsign, destination_id))
+				
+			#if the message type is position report extract all the fields and add them to associated list
 			elif msgType.equals("position_report"):
-				try:
-					position = message['Position']
-					coordinates = position['Coordinates']
-					longitude = coordinates[0]
-					lattitude = coordinates[1]
-					lastStatic_id = 
-			
-			
-			singleRow = "ROW("
-			singleRow = singleRow + str(id_counter) + ','
-			for v in element:
-				singleRow = singleRow + str(element[v]) + ', '
-			singleRow = singleRow[:-2] + ')'
-			rowsArray.append(singleRow)
-			id_counter++			
+				position = message['Position']
+				coordinates = position['Coordinates']
+				longitude = coordinates[0]
+				lattitude = coordinates[1]
+				
+				#how do we get these values?
+				lastStaticData_id = None
+				mapview1 = None
+				mapview2 = None
+				mapview3 = None
+				
+				position_report_list.append(list(longitude, lattitude))
+				
 
-		
+				
+			#beginning of sql statement for each table
 			ais_statement = """INSERT INTO AIS_MESSAGE VALUES( """
 			positionReportStatement = """INSERT INTO POSITION_REPORT VALUES( """
 			staticDataStatement = """INSERT INTO TABLE STATIC_DATA VALUES ("""
 			
+			#add static data to complete statement
 			if "static_data" in rowsArray
 				for value in range(4): 
 					ais_statement = ais_statement + value + ','
@@ -82,14 +99,14 @@ class MessageDAO:
 				for value in range(4,len(rowsArray)-1)
 						staticDataStatement = staticDataStatement + value + ', '
 						
-
+			#add position report data to complete statement
 			if "position_report" in rows:
 				for value in range(4): 
 					ais_statement = ais_statement + value + ','
 				positionReportStatement = positionReportStatement + value + ', '
 				
-					
-			positionReportStatement = positionReportStatement[:-2] + ''
+			ais_statement = ais_statement[:-2] + ')'	
+			positionReportStatement = positionReportStatement[:-2] + ')'
 			staticDataStatement = staticDataStatement[:-2] + ')'	
 		
 	
@@ -114,17 +131,23 @@ class MessageDAO:
 				return -1
 		
 		try:
-			print("""SELECT * FROM 'STATIC_DATA' WHERE""MMSI"=%s""",MMSI)
+			cnx = Mysql_connector.getConnection()
+			cnx = cnx.cursor(prepared=True)
+			cursor.execute("""SELECT * FROM 'STATIC_DATA' WHERE""MMSI"=%s""",MMSI)
+			cnx.commit()
 		except:
 			return -1
 
     	
 
-
+#connection class
 class Mysql_connector():
 	
 	def __init__(self):
 		pass
+		
+	#get connection currently works as is
+	#setting aside the config reading functionality for later
 	def getConnection():
 		config = configparser.ConfigParser()
 		config.read('config.ini')
@@ -162,34 +185,31 @@ class Mysql_connector():
 
 class DAOTest (unittest.TestCase):
 
-	batch = """[ {\"AISMEssage_Id\":\"1\",\"NavigationalStatus\":\"Under way using engine\",\"MMSI\":304858000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.218332,13.371672]},\"Status\":\"\",\"SoG\":10.8,\"CoG\":94.3,\"Heading\":97},
-                {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
+	batch = """[ {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
                 {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
                 {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240},
                 {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111923,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"BALTIC2 WINDFARM SW\",\"VesselType\":\"Undefined\",\"Length\":8,\"Breadth\":12,\"A\":4,\"B\":4,\"C\":4,\"D\":8},
                 {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257385000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.219403,13.127725]},\"Status\":\"Under way using engine\",\"RoT\":25.7,\"SoG\":12.3,\"CoG\":96.5,\"Heading\":101},
                 {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":376503000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.519373,11.47914]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":7.6,\"CoG\":294.4,\"Heading\":290} ]"""
 
-	posRep = json.dumps((1,'Under way using engine',11.107765,54.947323,'NULL',0.0,293.1,'NULL','NULL',1,5428,54281))
-	
+	#tests correct insertion type
 	def test_insert_messages (self):
 		dao = MessageDAO(True)
 		
 		inserted_messages = dao.insert_messages(self.batch)
 		self.assertTrue(type(inserted_messages) is int and inserted_messages > 0)
 		
-		
+	#tests correct insertion amount
 	def test_insert_messages2 (self):
 		dao = MessageDAO(True)
 		array = json.loads( self.batch )
 		inserted_count = dao.insert_messages( array )
 		self.assertEqual( inserted_count, -1)
 		
-	
-	def test_get_insert_statement (self):
+	#tests correct statment is created for sql execution
+	def test_get_AIS_insert_statement (self):
 		dao = MessageDAO()
-		realQuery = "INSERT INTO TABLE POSITION_REPORT VALUES (ROW(2020-11-18T00:00:00.000Z, Class A, 304858000, position_report, {'type': 'Point', 'coordinates': [55.218332, 13.371672]}, Under way using engine, 10.8, 94.3, 97))"
-		print(self.posRep)
+		realQuery = "INSERT INTO TABLE AIS_MESSAGE VALUES (2020-11-18T00:00:00.000Z, AtoN, 992111840, static_data)
 		array = json.loads(self.posRep)
 		statements = dao.get_insert_statement(array)
 		self.assertEqual(realQuery, statements[1])
@@ -209,18 +229,6 @@ class DAOTest (unittest.TestCase):
 		result = dao.read_permanent_info(3048580000)
 		self.assertTrue(result>0)
 		
-#########MySQL Connection Tests############
-
-		
-	#def test_connection (self):
-		#con = Mysql_connector()
-		#cnx = con.getConnection
-		#self.assertTrue(cnx)
-		
-	#def test_execute():
-		#testQuery = "SELECT IMO FROM VESSEL;"
-		#result = self.sql.exeute(testQuery)
-		#self.assertTrue(len(result) > 0)
 	
 ########Integration Tests###########
 		
