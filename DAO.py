@@ -92,11 +92,11 @@ class MessageDAO:
 			staticDataStatement = """INSERT INTO TABLE STATIC_DATA VALUES ("""
 			
 			#add static data to complete statement
-			if "static_data" in rowsArray
+			if "static_data" in rowsArray:
 				for value in range(4): 
 					ais_statement = ais_statement + value + ','
 					
-				for value in range(4,len(rowsArray)-1)
+				for value in range(4,len(rowsArray)-1):
 						staticDataStatement = staticDataStatement + value + ', '
 						
 			#add position report data to complete statement
@@ -132,7 +132,7 @@ class MessageDAO:
 		
 		try:
 			cnx = Mysql_connector.getConnection()
-			cnx = cnx.cursor(prepared=True)
+			cursor = cnx.cursor(prepared=True)
 			cursor.execute("""SELECT * FROM 'STATIC_DATA' WHERE""MMSI"=%s""",MMSI)
 			cnx.commit()
 		except:
@@ -209,7 +209,7 @@ class DAOTest (unittest.TestCase):
 	#tests correct statment is created for sql execution
 	def test_get_AIS_insert_statement (self):
 		dao = MessageDAO()
-		realQuery = "INSERT INTO TABLE AIS_MESSAGE VALUES (2020-11-18T00:00:00.000Z, AtoN, 992111840, static_data)
+		realQuery = "INSERT INTO TABLE AIS_MESSAGE VALUES (2020-11-18T00:00:00.000Z, AtoN, 992111840, static_data)"
 		array = json.loads(self.posRep)
 		statements = dao.get_insert_statement(array)
 		self.assertEqual(realQuery, statements[1])
@@ -219,7 +219,7 @@ class DAOTest (unittest.TestCase):
 		deleted = dao.delete(msg)
 		
 	def test_read_most_recent_positions(self):
-		dao = MessageDao(True)
+		dao = MessageDAO(True)
 		result = dao.read_most_recent_positions()
 		self.assertEqual()
 		
