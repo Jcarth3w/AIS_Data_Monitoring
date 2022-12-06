@@ -47,11 +47,11 @@ create table MAP_VIEW(
 
 #AIS_Message Table
 create table AIS_MESSAGE(
-	Id mediumint unsigned AUTO_INCREMENT
-	Timestamp datetime,
+	Id mediumint unsigned AUTO_INCREMENT,
+	Ts timestamp,
 	Class enum('Class A','Class B','AtoN','Base Station'),
 	MMSI int,
-	MessageType varchar(16)
+	MessageType varchar(16),
 	primary key (Id)
 );
 
@@ -81,7 +81,6 @@ create table AIS_MESSAGE(
  	AISMessage_Id mediumint unsigned,
  	AIS_IMO int,
  	CallSign varchar(8),
- 	Name varchar(30),
  	DetinationPort_Id smallint,
  	foreign key (AISMessage_Id) references AIS_MESSAGE(Id),
  	primary key (AISMessage_Id)
