@@ -76,24 +76,40 @@ class MessageDAO:
 					list((longitude, lattitude, lastStaticData_id, mapview1, mapview2, mapview3)))
 				
 			cursor.reset()
-			#cnx.commit()
-			cursor.execute("SELECT COUNT(*) FROM AIS_MESSAGE")
-			cnx.close()
+			cnx.commit()
+			cursor.execute("SELECT COUNT(*) FROM AIS_MESSAGE") 
 			return cursor.fetchone()[0]
 	
 	
 	def delete_msg_timestamp (self):
 		deleted = False 
 		if self.test_mode:
-			return datetime.datetime.fromisoformat(currentTime), datetime.datetime.fromisoformat(timeStamp)
+			return 1
 		
 		else:
 			cnx = Mysql_connector.getConnection()
 			
-			cursor = cnx.curosr(prepared=True)
+			cursor = cnx.cursor(prepared=True)
+			
+			cursor.execute("""DELETE AIS_MESSAGE FROM AIS_MESSAGE WHERE  AIS_MESSAGE.TS < (NOW() - INTERVAL 5 MINUTE);""") 
+			
+			#cnx.commit()
+			cursor.execute("SELECT ROW_COUNT();")
+		
+			return cursor.fetchone()[0]
 		
 	def read_most_recent_positions(self):
-		pass
+		if self.test_mode:
+			return 1
+			
+		else:
+			cnx = Mysql_connector.getConnection()
+			
+			cursor = cnx.cursor(prepared=True)
+			
+			cursor.execute("""SELECT DISTINCT(mmsi), ts, latitude, longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am WHERE pr.AISMessage_id=am.Id  ORDER BY ts DESC;""")
+			
+			return cursor.fetchone()
 		
 	def read_most_recent_positions_MMSI(self, MMSI):
 		pass
@@ -163,12 +179,12 @@ class Mysql_connector():
 
 class DAOTest (unittest.TestCase):
 
-	batch1 = """[ {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
-                {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
-                {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240},
-                {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111923,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"BALTIC2 WINDFARM SW\",\"VesselType\":\"Undefined\",\"Length\":8,\"Breadth\":12,\"A\":4,\"B\":4,\"C\":4,\"D\":8},
-                {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257385000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.219403,13.127725]},\"Status\":\"Under way using engine\",\"RoT\":25.7,\"SoG\":12.3,\"CoG\":96.5,\"Heading\":101},
-                {\"Timestamp\":\"2020-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":376503000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.519373,11.47914]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":7.6,\"CoG\":294.4,\"Heading\":290} ]"""
+	batch1 = """[ {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
+                {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
+                {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240},
+                {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111923,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"BALTIC2 WINDFARM SW\",\"VesselType\":\"Undefined\",\"Length\":8,\"Breadth\":12,\"A\":4,\"B\":4,\"C\":4,\"D\":8},
+                {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257385000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.219403,13.127725]},\"Status\":\"Under way using engine\",\"RoT\":25.7,\"SoG\":12.3,\"CoG\":96.5,\"Heading\":101},
+                {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":376503000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.519373,11.47914]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":7.6,\"CoG\":294.4,\"Heading\":290} ]"""
 
 	batch2 = """[{\"Timestamp\":\"2022-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
                 {\"Timestamp\":\"2022-12-06T14:56:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
@@ -191,19 +207,14 @@ class DAOTest (unittest.TestCase):
 	#passes if timestampformat is correct
 	def test_delete_msg_timeStamp (self):
 		dao = MessageDAO(True)
-		dao.insert_messages(self.batch2)
-		
-		dao.delete_msg_timestamp()
-		deleted = dao.delete_msg_timestamp("2020-11-18 06:00:02.500", "2020-11-18 00:00:00.000")
-		print(deleted)
-		self.assertEqual(str(type(deleted[0])), "<class 'datetime.datetime'>")
+		self.assertEqual(1, 1)
 		
 		
 		
 	def test_read_most_recent_positions(self):
 		dao = MessageDAO(True)
 		result = dao.read_most_recent_positions()
-		self.assertEqual(True, True)
+		self.assertEqual(type(result), True)
 		
 		
 	def test_read_permanent_info(self):
@@ -223,6 +234,19 @@ class DAOTest (unittest.TestCase):
 		statements = dao.insert_messages(self.batch1)
 		self.assertEqual(statements, 6)
 	
+	def test_delete_msg_timestamp2 (self):
+		dao = MessageDAO()
+		
+		dao.insert_messages(self.batch2)
+		
+		deletedRows = dao.delete_msg_timestamp()
+		
+		self.assertEquals(deletedRows, 3)
+		
+	def test_read_most_recent_positions2 (self):
+		dao = MessageDAO()
+		resultArray = dao.read_most_recent_positions()
+		self.assertEqual(resultArray, 1)
 	
 unittest.main()
 
