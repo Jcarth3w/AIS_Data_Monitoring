@@ -93,7 +93,8 @@ class MessageDAO:
 			
 			cursor.execute("""DELETE AIS_MESSAGE FROM AIS_MESSAGE WHERE  AIS_MESSAGE.TS < (NOW() - INTERVAL 5 MINUTE);""") 
 			
-			#cnx.commit()
+			cursor.reset()
+			cnx.commit()
 			cursor.execute("SELECT ROW_COUNT();")
 		
 			return cursor.fetchone()[0]
@@ -109,7 +110,13 @@ class MessageDAO:
 			
 			cursor.execute("""SELECT DISTINCT(mmsi), ts, latitude, longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am WHERE pr.AISMessage_id=am.Id  ORDER BY ts DESC;""")
 			
-			return cursor.fetchone()
+			returnedList = cursor.fetchall()
+			
+			for value in range(len(returnedList)):
+				returnedList[value] = list(returnedList[value])
+				returnedList[value].pop(1)
+			
+			return returnedList
 		
 	def read_most_recent_positions_MMSI(self, MMSI):
 		pass
@@ -159,19 +166,7 @@ class Mysql_connector():
 				print("Database does not exist")
 			else:
 				print(err)
-			
-			
-	def execute (self, query):
-		cursor = self.cnx.cursor()
-		cursor.execute(query)
-		result = cursor.fetchall()
-		cursor.close()
-		
-		return result
-	
-	
-	
-	
+
 	
 	
 ##################TESTS#####################
@@ -213,8 +208,9 @@ class DAOTest (unittest.TestCase):
 		
 	def test_read_most_recent_positions(self):
 		dao = MessageDAO(True)
+		array = []
 		result = dao.read_most_recent_positions()
-		self.assertEqual(type(result), True)
+		self.assertTrue(type(result) is not type(array))
 		
 		
 	def test_read_permanent_info(self):
@@ -238,15 +234,15 @@ class DAOTest (unittest.TestCase):
 		dao = MessageDAO()
 		
 		dao.insert_messages(self.batch2)
-		
 		deletedRows = dao.delete_msg_timestamp()
 		
 		self.assertEquals(deletedRows, 3)
 		
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
+		testArray = [(219005465), ]
 		resultArray = dao.read_most_recent_positions()
-		self.assertEqual(resultArray, 1)
+		self.assertEqual(resultArray, )
 	
 unittest.main()
 
