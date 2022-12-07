@@ -112,6 +112,9 @@ class MessageDAO:
 			for value in range(len(returnedList)):
 				returnedList[value] = list(returnedList[value])
 				returnedList[value].pop(1)
+				
+				returnedList[value][1] = float(returnedList[value][1])
+				returnedList[value][2] = float(returnedList[value][2])
 			
 			return returnedList
 		
@@ -151,8 +154,8 @@ class Mysql_connector():
 		config.read('config.ini')
 		try: 
 			return mysql.connector.connect(host = '127.0.0.1', 
-			user = 'jack', 
-			password = 'drum',
+			user = 'testuser', 
+			password = 'password',
 			db = 'Datastore',
 			port = 3306)
 		
@@ -237,9 +240,9 @@ class DAOTest (unittest.TestCase):
 		
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
-		testArray = [(219005465), ]
 		resultArray = dao.read_most_recent_positions()
-		self.assertEqual(resultArray, )
+		self.assertEqual(resultArray[0], list((219005465, 11.929218, 54.572601)))
+		self.assertEqual(resultArray[1], list((257961000, 12.809015, 55.003159)))
 	
 unittest.main()
 
