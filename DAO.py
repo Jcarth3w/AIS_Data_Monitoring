@@ -112,6 +112,10 @@ class MessageDAO:
 			for value in range(len(returnedList)):
 				returnedList[value] = list(returnedList[value])
 				returnedList[value].pop(1)
+				
+				returnedList[value][1] = float(returnedList[value][1])
+				returnedList[value][1] = float(returnedList[value][2])
+			
 			
 			return returnedList
 		
@@ -182,6 +186,14 @@ class DAOTest (unittest.TestCase):
                 {\"Timestamp\":\"2022-12-06T14:56:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
                 {\"Timestamp\":\"2022-12-06T14:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240}]"""
 
+
+	def test_delete_all_messages(self):
+		cnx = Mysql_connector.getConnection()
+		cursor = cnx.cursor(prepared=True)
+		cursor.execute("""DELETE FROM AIS_MESSAGE;""")
+		cnx.commit()
+		self.assertTrue(True)
+	
 	#tests correct insertion type
 	def test_insert_messages (self):
 		dao = MessageDAO(True)
@@ -237,9 +249,9 @@ class DAOTest (unittest.TestCase):
 		
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
-		testArray = [(219005465), ]
 		resultArray = dao.read_most_recent_positions()
-		self.assertEqual(resultArray, )
+		self.assertEqual(resultArray[0], list((219005465, 11.929218, 55.572601)))
+		self.assertEqual(reslultArray[1], list((25796100, 12.809015, 55.003159)))
 	
 unittest.main()
 
