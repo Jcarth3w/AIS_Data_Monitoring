@@ -78,7 +78,7 @@ class MessageDAO:
 			cursor.reset()
 			cnx.commit()
 			cursor.execute("SELECT COUNT(*) FROM AIS_MESSAGE") 
-			return cursor.fetchone()[0]
+			return cursor.fetchall()[0][0]
 	
 	
 	def delete_msg_timestamp (self):
@@ -91,13 +91,10 @@ class MessageDAO:
 			
 			cursor = cnx.cursor(prepared=True)
 			
-			cursor.execute("""DELETE AIS_MESSAGE FROM AIS_MESSAGE WHERE  AIS_MESSAGE.TS < (NOW() - INTERVAL 5 MINUTE);""") 
-			
-			cursor.reset()
+			cursor.execute("""DELETE AIS_MESSAGE FROM AIS_MESSAGE WHERE  AIS_MESSAGE.TS < (NOW() - INTERVAL 5 MINUTE);""")
 			cnx.commit()
-			cursor.execute("SELECT ROW_COUNT();")
 		
-			return cursor.fetchone()[0]
+			return cursor.rowcount
 		
 	def read_most_recent_positions(self):
 		if self.test_mode:
@@ -154,8 +151,8 @@ class Mysql_connector():
 		config.read('config.ini')
 		try: 
 			return mysql.connector.connect(host = '127.0.0.1', 
-			user = 'jack', 
-			password = 'drum',
+			user = 'dawson', 
+			password = 'Airplane11!!',
 			db = 'Datastore',
 			port = 3306)
 		
@@ -236,7 +233,7 @@ class DAOTest (unittest.TestCase):
 		dao.insert_messages(self.batch2)
 		deletedRows = dao.delete_msg_timestamp()
 		
-		self.assertEquals(deletedRows, 3)
+		self.assertEqual(deletedRows, 3)
 		
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
