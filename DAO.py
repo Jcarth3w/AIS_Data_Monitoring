@@ -151,8 +151,8 @@ class Mysql_connector():
 		config.read('config.ini')
 		try: 
 			return mysql.connector.connect(host = '127.0.0.1', 
-			user = 'dawson', 
-			password = 'Airplane11!!',
+			user = 'jack', 
+			password = 'drum',
 			db = 'Datastore',
 			port = 3306)
 		
