@@ -13,7 +13,7 @@ class MessageDAO:
 		self.test_mode=test_mode
 		self.Mysql_connector = Mysql_connector()
 
-	def load_permanent_data(self):
+	def load_vessel_data(self):
 		with open('VESSEL.csv', 'r') as object:
 			reader = csv.reader(object)
 			vesselList = list((reader))
@@ -30,11 +30,31 @@ class MessageDAO:
 		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
 		vesselList[1:])
 
-		#cnx.commit()
+		cnx.commit()
 		rowcount = cursor.rowcount
 		cnx.close()
 
-		return rowcount
+		return abs(rowcount)
+
+	def load_map_data(self):
+		with open('MAP_VIEW.csv', 'r') as object:
+			reader = csv.reader(object)
+			mapTileList = list((reader))
+			for i in range(1, len(mapTileList)):
+				for j in range(len(mapTileList[i])):
+					if mapTileList[i][j] == '\\N':
+						mapTileList[i][j] = None
+		
+		cnx = Mysql_connector.getConnection()
+		cursor = cnx.cursor(prepared=True)
+
+		cursor.executemany("""INSERT INTO MAP_VIEW VALUES
+		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
+		mapTileList[1:])
+
+		cnx.commit()
+		rowcount = cursor.rowcount
+		return abs(rowcount)
 
 		
 	#function that inserts a batch of AIS Messages
@@ -243,6 +263,7 @@ class DAOTest (unittest.TestCase):
 		cursor = cnx.cursor(prepared=True)
 		cursor.execute("""DELETE FROM AIS_MESSAGE;""")
 		cursor.execute("""DELETE FROM VESSEL;""")
+		cursor.execute("""DELETE FROM MAP_VIEW;""")
 		cnx.commit()
 		self.assertTrue(True)
 	
@@ -289,10 +310,15 @@ class DAOTest (unittest.TestCase):
 		convertedTime = "2020-11-18 00:00:00.000"
 		self.assertEqual(convertedTime, dao.convert_time("2020-11-18T00:00:00.000Z"))
 	
-	def test_load_permanent_data(self):
+	def test_load_vessel_data(self):
 		dao = MessageDAO()
-		rowsInserted = dao.load_permanent_data()
-		self.assertEqual(-204477, rowsInserted)
+		rowsInserted = dao.load_vessel_data()
+		self.assertEqual(204477, rowsInserted)
+
+	def test_load_map_data(self):
+		dao = MessageDAO()
+		rowsInserted = dao.load_map_data()
+		self.assertEqual(171, rowsInserted)
 	
 ########Integration Tests###########
 		
