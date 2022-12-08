@@ -145,8 +145,31 @@ class MessageDAO:
 			
 			return returnedList
 		
-	def read_most_recent_positions_MMSI(self, MMSI):
-		pass
+	def read_most_recent_positions_MMSI(self, mmsi):
+		if self.test_mode:
+			try:
+				return int(mmsi)
+			except:
+				return -1
+			
+		else:
+			cnx = Mysql_connector.getConnection()
+			
+			mmsiInQuery = []
+			mmsiInQuery.append(mmsi)
+			cursor = cnx.cursor(prepared=True)
+			cursor.execute("""SELECT DISTINCT(mmsi), IMO, Ts, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am VESSEL as ves WHERE pr.AISMessage_id=am.Id AND am.MMSI= %s ORDER BY ts DESC;""", mmsiInQuery)
+			
+			returnedList = cursor.fetchall()
+			
+			for value in range(len(returnedList)):
+				returnedList[value] = list(returnedList[value])
+				returnedList[value].pop(1)
+				
+				returnedList[value][1] = float(returnedList[value][1])
+				returnedList[value][2] = float(returnedList[value][2])
+			
+			return returnedList
 		
 	def read_permanent_info(self, MMSI):
 		if self.test_mode:
@@ -154,14 +177,16 @@ class MessageDAO:
 				return int(MMSI)
 			except:
 				return -1
+				
+		else:
 		
-		try:
-			cnx = Mysql_connector.getConnection()
-			cursor = cnx.cursor(prepared=True)
-			cursor.execute("""SELECT * FROM 'STATIC_DATA' WHERE""MMSI"=%s""",MMSI)
-			cnx.commit()
-		except:
-			return -1
+			try:
+				cnx = Mysql_connector.getConnection()
+				cursor = cnx.cursor(prepared=True)
+				cursor.execute("""SELECT * FROM 'STATIC_DATA' WHERE""MMSI"=%s""",MMSI)
+				cnx.commit()
+			except:
+				return -1
 			
 	def convert_time(self, timestamp):
 		return str(timestamp).replace('T',' ').replace('Z', '')
@@ -248,10 +273,16 @@ class DAOTest (unittest.TestCase):
 		self.assertTrue(type(result) is type(array))
 		
 		
+	def test_most_recent_pos_mmsi(self):
+		dao = MessageDAO(True)
+		result = dao.read_permanent_info(3048580000)
+		
+		self.assertTrue(type(result) is int)
+	
 	def test_read_permanent_info(self):
 		dao = MessageDAO(True)
 		result = dao.read_permanent_info(3048580000)
-		self.assertTrue(result>0)
+		self.assertTrue(type(result) is int)
 
 	def test_convert_time(self):
 		dao = MessageDAO()
@@ -281,8 +312,16 @@ class DAOTest (unittest.TestCase):
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
 		resultArray = dao.read_most_recent_positions()
-		self.assertEqual(list((219005465, 11.929218, 54.572601)), resultArray[0])
-		self.assertEqual(list((257961000, 12.809015, 55.003159)), resultArray[1])
+		self.assertEqual(list((219005465, 11.929218, 54.572602)), resultArray[0])
+		self.assertEqual(list((257961000, 12.809015, 55.00316)), resultArray[1])
+		
+	def test_read_most_recent_pos_mmsi2(self):
+		dao = MessageDAO()
+		testMMSI = 219005465
+		resultArray = dao.read_most_recent_positions_MMSI(testMMSI)
+		self.assertEqual(list((219005465, 11.929218, 54.572602)), resultArray[0])
+		
+		
 	
 unittest.main()
 

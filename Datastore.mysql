@@ -63,7 +63,7 @@ create table AIS_MESSAGE(
  	Name varchar(30),
  	Country varchar(15),
  	Longitude decimal(9,6),
- 	Lattitude decimal(8,6),
+ 	Latitude decimal(8,6),
  	Website varchar(60),
  	MapView1_Id mediumint,
  	MapView2_Id mediumint,
