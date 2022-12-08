@@ -82,9 +82,10 @@ class MessageDAO:
 	
 	
 	def delete_msg_timestamp (self):
-		deleted = False 
 		if self.test_mode:
-			return 1
+			deleted = [10] * 10
+			
+			return len(deleted)
 		
 		else:
 			cnx = Mysql_connector.getConnection()
@@ -98,7 +99,8 @@ class MessageDAO:
 		
 	def read_most_recent_positions(self):
 		if self.test_mode:
-			return 1
+			shipDocument = [100000000, 11.232, 55.888]
+			return shipDocument
 			
 		else:
 			cnx = Mysql_connector.getConnection()
@@ -154,8 +156,8 @@ class Mysql_connector():
 		config.read('config.ini')
 		try: 
 			return mysql.connector.connect(host = '127.0.0.1', 
-			user = 'testuser', 
-			password = 'password',
+			user = 'jack', 
+			password = 'drum',
 			db = 'Datastore',
 			port = 3306)
 		
@@ -210,15 +212,15 @@ class DAOTest (unittest.TestCase):
 	#passes if timestampformat is correct
 	def test_delete_msg_timeStamp (self):
 		dao = MessageDAO(True)
-		self.assertEqual(1, 1)
-		
+		deleted = dao.delete_msg_timestamp()
+		self.assertEqual(deleted, 10)
 		
 		
 	def test_read_most_recent_positions(self):
 		dao = MessageDAO(True)
 		array = []
 		result = dao.read_most_recent_positions()
-		self.assertTrue(type(result) is not type(array))
+		self.assertTrue(type(result) is type(array))
 		
 		
 	def test_read_permanent_info(self):
@@ -249,8 +251,8 @@ class DAOTest (unittest.TestCase):
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
 		resultArray = dao.read_most_recent_positions()
-		self.assertEqual(resultArray[0], list((219005465, 11.929218, 54.572601)))
-		self.assertEqual(resultArray[1], list((257961000, 12.809015, 55.003159)))
+		self.assertEqual(resultArray[0], list((219005465, 11.929218, 54.572602)))
+		self.assertEqual(resultArray[1], list((257961000, 12.809015, 55.00316)))
 	
 unittest.main()
 
