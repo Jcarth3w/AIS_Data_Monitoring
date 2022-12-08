@@ -130,9 +130,10 @@ class MessageDAO:
 		else:
 			cnx = Mysql_connector.getConnection()
 			
-			
+			mmsiInQuery = []
+			mmsiInQuery.append(mmsi)
 			cursor = cnx.cursor(prepared=True)
-			cursor.execute("""SELECT DISTINCT(mmsi), ts, latitude, longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am WHERE pr.AISMessage_id=am.Id AND am.mmsi=%s ORDER BY ts DESC;""", mmsi)
+			cursor.execute("""SELECT DISTINCT(mmsi), IMO, Ts, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am VESSEL as ves WHERE pr.AISMessage_id=am.Id AND am.MMSI= %s ORDER BY ts DESC;""", mmsiInQuery)
 			
 			returnedList = cursor.fetchall()
 			
