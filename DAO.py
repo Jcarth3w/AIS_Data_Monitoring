@@ -120,12 +120,30 @@ class MessageDAO:
 			
 			return returnedList
 		
-	def read_most_recent_positions_MMSI(self, MMSI):
+	def read_most_recent_positions_MMSI(self, mmsi):
 		if self.test_mode:
 			try:
-				return int(MMSI)
+				return int(mmsi)
 			except:
 				return -1
+			
+		else:
+			cnx = Mysql_connector.getConnection()
+			
+			
+			cursor = cnx.cursor(prepared=True)
+			cursor.execute("""SELECT DISTINCT(mmsi), ts, latitude, longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am WHERE pr.AISMessage_id=am.Id AND am.mmsi=%s ORDER BY ts DESC;""", mmsi)
+			
+			returnedList = cursor.fetchall()
+			
+			for value in range(len(returnedList)):
+				returnedList[value] = list(returnedList[value])
+				returnedList[value].pop(1)
+				
+				returnedList[value][1] = float(returnedList[value][1])
+				returnedList[value][2] = float(returnedList[value][2])
+			
+			return returnedList
 		
 	def read_permanent_info(self, MMSI):
 		if self.test_mode:
@@ -232,7 +250,6 @@ class DAOTest (unittest.TestCase):
 	def test_most_recent_pos_mmsi(self):
 		dao = MessageDAO(True)
 		result = dao.read_permanent_info(3048580000)
-		print(type(result))
 		
 		self.assertTrue(type(result) is int)
 	
@@ -266,6 +283,14 @@ class DAOTest (unittest.TestCase):
 		resultArray = dao.read_most_recent_positions()
 		self.assertEqual(list((219005465, 11.929218, 54.572602)), resultArray[0])
 		self.assertEqual(list((257961000, 12.809015, 55.00316)), resultArray[1])
+		
+	def test_read_most_recent_pos_mmsi2(self):
+		dao = MessageDAO()
+		testMMSI = 219005465
+		resultArray = dao.read_most_recent_positions_MMSI(testMMSI)
+		self.assertEqual(list((219005465, 11.929218, 54.572602)), resultArray[0])
+		
+		
 	
 unittest.main()
 
