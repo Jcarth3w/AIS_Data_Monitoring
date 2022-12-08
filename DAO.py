@@ -4,6 +4,7 @@ import mysql.connector
 from mysql.connector import errorcode
 import unittest 
 import datetime
+import csv
 
 
 class MessageDAO:
@@ -11,6 +12,30 @@ class MessageDAO:
 	def __init__(self, test_mode=False):
 		self.test_mode=test_mode
 		self.Mysql_connector = Mysql_connector()
+
+	def load_permanent_data(self):
+		with open('VESSEL.csv', 'r') as object:
+			reader = csv.reader(object)
+			vesselList = list((reader))
+			for i in range(1, len(vesselList)):
+				vesselList[i][0] = int(vesselList[i][0])
+				for j in range(len(vesselList[i])):
+					if vesselList[i][j] == '\\N':
+						vesselList[i][j] = None
+		
+		cnx = Mysql_connector.getConnection()
+		cursor = cnx.cursor(prepared=True)
+
+		cursor.executemany("""INSERT INTO VESSEL VALUES
+		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+		vesselList[1:])
+
+		#cnx.commit()
+		rowcount = cursor.rowcount
+		cnx.close()
+
+		return rowcount
+
 		
 	#function that inserts a batch of AIS Messages
 	#can be either position_report or static_data
@@ -156,8 +181,8 @@ class Mysql_connector():
 		config.read('config.ini')
 		try: 
 			return mysql.connector.connect(host = '127.0.0.1', 
-			user = 'jack', 
-			password = 'drum',
+			user = 'testuser', 
+			password = 'password',
 			db = 'Datastore',
 			port = 3306)
 		
@@ -192,13 +217,13 @@ class DAOTest (unittest.TestCase):
 		cnx = Mysql_connector.getConnection()
 		cursor = cnx.cursor(prepared=True)
 		cursor.execute("""DELETE FROM AIS_MESSAGE;""")
+		cursor.execute("""DELETE FROM VESSEL;""")
 		cnx.commit()
 		self.assertTrue(True)
 	
 	#tests correct insertion type
 	def test_insert_messages (self):
 		dao = MessageDAO(True)
-		
 		inserted_messages = dao.insert_messages(self.batch1)
 		self.assertTrue(type(inserted_messages) is int and inserted_messages > 0)
 		
@@ -233,6 +258,11 @@ class DAOTest (unittest.TestCase):
 		convertedTime = "2020-11-18 00:00:00.000"
 		self.assertEqual(convertedTime, dao.convert_time("2020-11-18T00:00:00.000Z"))
 	
+	def test_load_permanent_data(self):
+		dao = MessageDAO()
+		rowsInserted = dao.load_permanent_data()
+		self.assertEqual(-204477, rowsInserted)
+	
 ########Integration Tests###########
 		
 	def test_insert_messages3 (self):
@@ -251,8 +281,8 @@ class DAOTest (unittest.TestCase):
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
 		resultArray = dao.read_most_recent_positions()
-		self.assertEqual(resultArray[0], list((219005465, 11.929218, 54.572602)))
-		self.assertEqual(resultArray[1], list((257961000, 12.809015, 55.00316)))
+		self.assertEqual(list((219005465, 11.929218, 54.572601)), resultArray[0])
+		self.assertEqual(list((257961000, 12.809015, 55.003159)), resultArray[1])
 	
 unittest.main()
 
