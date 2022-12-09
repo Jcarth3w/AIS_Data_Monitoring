@@ -208,10 +208,10 @@ class MessageDAO:
 			
 			for value in range(len(returnedList)):
 				returnedList[value] = list(returnedList[value])
-				returnedList[value].pop(1)
+				returnedList[value].pop(2)
 				
-				returnedList[value][1] = float(returnedList[value][1])
 				returnedList[value][2] = float(returnedList[value][2])
+				returnedList[value][3] = float(returnedList[value][3])
 			
 			return returnedList
 		
@@ -286,7 +286,7 @@ class DAOTest (unittest.TestCase):
 		cnx = Mysql_connector.getConnection()
 		cursor = cnx.cursor(prepared=True)
 		cursor.execute("""DELETE FROM AIS_MESSAGE;""")
-		#cursor.execute("""DELETE FROM VESSEL;""")
+	#	cursor.execute("""DELETE FROM VESSEL;""")
 		cursor.execute("""DELETE FROM MAP_VIEW;""")
 		cursor.execute("""DELETE FROM PORT;""")
 		cnx.commit()
