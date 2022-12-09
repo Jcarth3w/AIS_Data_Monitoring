@@ -69,7 +69,6 @@ class MessageDAO:
 						portDataList[i][j] = None
 		cnx = Mysql_connector.getConnection()
 		cursor = cnx.cursor(prepared=True)
-		print("\nLoading PORT data into database, please wait.")
 
 		print(portDataList[1])
 		cursor.executemany("""INSERT INTO PORT VALUES

@@ -68,9 +68,9 @@ create table AIS_MESSAGE(
  	MapView1_Id mediumint,
  	MapView2_Id mediumint,
  	Mapview3_Id mediumint,
- 	foreign key(MapView1_Id) references MAP_VIEW(Id),
- 	foreign key(MapView2_Id) references MAP_VIEW(Id),
- 	foreign key(MapView3_Id) references MAP_VIEW(Id),
+ 	foreign key(MapView1_Id) references MAP_VIEW(Id) ON DELETE CASCADE,
+ 	foreign key(MapView2_Id) references MAP_VIEW(Id) ON DELETE CASCADE,
+ 	foreign key(MapView3_Id) references MAP_VIEW(Id) ON DELETE CASCADE,
  	primary key(Id)
  );
 
