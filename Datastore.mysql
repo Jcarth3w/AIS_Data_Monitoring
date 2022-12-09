@@ -40,7 +40,7 @@ create table MAP_VIEW(
 	ActualLongitudeE decimal(9,6),
 	ActualLatitudeN decimal(8,6),
 	ContainerMapView_Id mediumint,
-	foreign key (ContainerMapView_Id) references MAP_VIEW(Id),
+	foreign key (ContainerMapView_Id) references MAP_VIEW(Id) ON DELETE CASCADE,
 	primary key( Id )
 );
 
