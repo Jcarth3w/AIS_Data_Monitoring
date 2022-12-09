@@ -178,7 +178,7 @@ class MessageDAO:
 			mmsiInQuery = []
 			mmsiInQuery.append(mmsi)
 			cursor = cnx.cursor(prepared=True)
-			cursor.execute("""SELECT DISTINCT(mmsi), IMO, Ts, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am VESSEL as ves WHERE pr.AISMessage_id=am.Id AND am.MMSI= %s ORDER BY ts DESC;""", mmsiInQuery)
+			cursor.execute("""SELECT ves.MMSI, IMO, Ts, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC;""", mmsiInQuery)
 			
 			returnedList = cursor.fetchall()
 			
@@ -226,10 +226,10 @@ class Mysql_connector():
 		config.read('config.ini')
 		try: 
 			return mysql.connector.connect(host = '127.0.0.1', 
-			user = 'testuser', 
-			password = 'password',
-			db = 'Datastore',
-			port = 3306)
+			user = config['mysqlDB']['user'], 
+			password = config['mysqlDB']['password'],
+			db = config['mysqlDB']['db'],
+			port = config['mysqlDB']['port'])
 		
 		except mysql.connector.Error as err:
 			if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -343,9 +343,9 @@ class DAOTest (unittest.TestCase):
 		
 	def test_read_most_recent_pos_mmsi2(self):
 		dao = MessageDAO()
-		testMMSI = 219005465
+		testMMSI = 257961000
 		resultArray = dao.read_most_recent_positions_MMSI(testMMSI)
-		self.assertEqual(list((219005465, 11.929218, 54.572602)), resultArray[0])
+		self.assertEqual(list((257961000, 9231535, 12.809015, 55.003160)), resultArray[0])
 		
 		
 	
