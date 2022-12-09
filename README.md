@@ -2,3 +2,7 @@
 Final project for CS418. Monitors and stores AIS data from ships
 
 ##Use the config.ini file to update user credentials##
+
+In order to first load the database, ensure you have the "Datastore.mysql" file in your working directory.
+
+Then, depending on your Operating System, run the "load_datastore_unix.sh" for MAC/Linux/Unix devices and "load_datastore_windows.ps1" for windows devices.
