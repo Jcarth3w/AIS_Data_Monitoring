@@ -25,6 +25,7 @@ class MessageDAO:
 		
 		cnx = Mysql_connector.getConnection()
 		cursor = cnx.cursor(prepared=True)
+		print("\nLoading VESSEL data into database, please wait.")
 
 		cursor.executemany("""INSERT INTO VESSEL VALUES
 		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
@@ -33,7 +34,6 @@ class MessageDAO:
 		cnx.commit()
 		rowcount = cursor.rowcount
 		cnx.close()
-
 		return abs(rowcount)
 
 	def load_map_data(self):
@@ -47,6 +47,8 @@ class MessageDAO:
 		
 		cnx = Mysql_connector.getConnection()
 		cursor = cnx.cursor(prepared=True)
+		print("\nLoading MAP data into database, please wait.")
+
 
 		cursor.executemany("""INSERT INTO MAP_VIEW VALUES
 		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
@@ -54,9 +56,31 @@ class MessageDAO:
 
 		cnx.commit()
 		rowcount = cursor.rowcount
+		cnx.close()
+		return abs(rowcount)
+	
+	def load_port_data(self):
+		with open('PORT.csv', 'r') as object:
+			reader = csv.reader(object, delimiter = ';')
+			portDataList = list((reader))
+			for i in range(1, len(portDataList)):
+				for j in range(len(portDataList[i])):
+					if portDataList[i][j] == '\\N':
+						portDataList[i][j] = None
+		cnx = Mysql_connector.getConnection()
+		cursor = cnx.cursor(prepared=True)
+		print("\nLoading PORT data into database, please wait.")
+
+		print(portDataList[1])
+		cursor.executemany("""INSERT INTO PORT VALUES
+		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+		portDataList[1:])
+		
+		cnx.commit()
+		rowcount = cursor.rowcount
+		cnx.close()
 		return abs(rowcount)
 
-		
 	#function that inserts a batch of AIS Messages
 	#can be either position_report or static_data
 	def insert_messages(self, batch):
@@ -262,8 +286,9 @@ class DAOTest (unittest.TestCase):
 		cnx = Mysql_connector.getConnection()
 		cursor = cnx.cursor(prepared=True)
 		cursor.execute("""DELETE FROM AIS_MESSAGE;""")
-		cursor.execute("""DELETE FROM VESSEL;""")
+		#cursor.execute("""DELETE FROM VESSEL;""")
 		cursor.execute("""DELETE FROM MAP_VIEW;""")
+		cursor.execute("""DELETE FROM PORT;""")
 		cnx.commit()
 		self.assertTrue(True)
 	
@@ -310,15 +335,20 @@ class DAOTest (unittest.TestCase):
 		convertedTime = "2020-11-18 00:00:00.000"
 		self.assertEqual(convertedTime, dao.convert_time("2020-11-18T00:00:00.000Z"))
 	
-	def test_load_vessel_data(self):
-		dao = MessageDAO()
-		rowsInserted = dao.load_vessel_data()
-		self.assertEqual(204477, rowsInserted)
+	#def test_load_vessel_data(self):
+	#	dao = MessageDAO()
+	#	rowsInserted = dao.load_vessel_data()
+	#	self.assertEqual(204477, rowsInserted)
 
 	def test_load_map_data(self):
 		dao = MessageDAO()
 		rowsInserted = dao.load_map_data()
 		self.assertEqual(171, rowsInserted)
+
+	def test_load_port_data(self):
+		dao = MessageDAO()
+		rowsInserted = dao.load_port_data()
+		self.assertEqual(150, rowsInserted)
 	
 ########Integration Tests###########
 		
