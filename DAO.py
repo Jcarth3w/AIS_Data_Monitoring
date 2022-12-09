@@ -184,10 +184,10 @@ class MessageDAO:
 			
 			for value in range(len(returnedList)):
 				returnedList[value] = list(returnedList[value])
-				returnedList[value].pop(1)
+				returnedList[value].pop(2)
 				
-				returnedList[value][1] = float(returnedList[value][1])
 				returnedList[value][2] = float(returnedList[value][2])
+				returnedList[value][3] = float(returnedList[value][3])
 			
 			return returnedList
 		
@@ -262,7 +262,7 @@ class DAOTest (unittest.TestCase):
 		cnx = Mysql_connector.getConnection()
 		cursor = cnx.cursor(prepared=True)
 		cursor.execute("""DELETE FROM AIS_MESSAGE;""")
-		cursor.execute("""DELETE FROM VESSEL;""")
+	#	cursor.execute("""DELETE FROM VESSEL;""")
 		cursor.execute("""DELETE FROM MAP_VIEW;""")
 		cnx.commit()
 		self.assertTrue(True)
@@ -310,10 +310,10 @@ class DAOTest (unittest.TestCase):
 		convertedTime = "2020-11-18 00:00:00.000"
 		self.assertEqual(convertedTime, dao.convert_time("2020-11-18T00:00:00.000Z"))
 	
-	def test_load_vessel_data(self):
-		dao = MessageDAO()
-		rowsInserted = dao.load_vessel_data()
-		self.assertEqual(204477, rowsInserted)
+	#def test_load_vessel_data(self):
+	#	dao = MessageDAO()
+	#	rowsInserted = dao.load_vessel_data()
+	#	self.assertEqual(204477, rowsInserted)
 
 	def test_load_map_data(self):
 		dao = MessageDAO()
