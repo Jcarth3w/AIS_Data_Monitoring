@@ -223,25 +223,52 @@ class MessageDAO:
 			
 			return returnedList
 		
-	def read_permanent_info(self, MMSI):
+	def read_permanent_info(self, MMSI, IMO):
 		if self.test_mode:
 			try:
-				return int(MMSI)
+				return int(MMSI), int(IMO)
 			except:
 				return -1
-				
 		else:
 		
-			try:
-				cnx = Mysql_connector.getConnection()
-				cursor = cnx.cursor(prepared=True)
-				cursor.execute("""SELECT * FROM 'STATIC_DATA' WHERE""MMSI"=%s""",MMSI)
-				cnx.commit()
-			except:
-				return -1
+		
+			valuesForQuery = []
+			valuesForQuery.append(MMSI)
+			valuesForQuery.append(IMO)
+			cnx = Mysql_connector.getConnection()
+			cursor = cnx.cursor(prepared=True)
+			cursor.execute("""SELECT ves.MMSI, IMO, Name, Latitude, Longitude FROM POSITION_REPORT as pr, VESSEL as ves, AIS_MESSAGE as am WHERE am.MMSI=ves.MMSI AND pr.AISMessage_id=am.Id AND ves.MMSI=%s AND ves.IMO=%s;""", valuesForQuery)
+
+			returnedList = cursor.fetchall()
+			
+			for value in range(len(returnedList)):
+				returnedList[value] = list(returnedList[value])
+				returnedList[value][3] = float(returnedList[value][3])
+				returnedList[value][4] = float(returnedList[value][4])
+			
+			return returnedList
+
 			
 	def convert_time(self, timestamp):
 		return str(timestamp).replace('T',' ').replace('Z', '')
+		
+		
+		
+	def insert_single_message(self):
+		pass
+	
+	def read_most_recent_in_tile(self):
+		pass
+		
+	def read_ports_with_name(self, name, country):
+		if self.test_mode:
+			try:
+				return str(name)
+			except:
+				return -1
+		
+	def read_positions_tile3_port(self, port_name, country):
+		pass
 
     	
 
@@ -331,14 +358,21 @@ class DAOTest (unittest.TestCase):
 		
 	def test_most_recent_pos_mmsi(self):
 		dao = MessageDAO(True)
-		result = dao.read_permanent_info(3048580000)
+		result = dao.read_most_recent_positions_MMSI(3048580000)
 		
 		self.assertTrue(type(result) is int)
 	
 	def test_read_permanent_info(self):
 		dao = MessageDAO(True)
-		result = dao.read_permanent_info(3048580000)
+		result = dao.read_permanent_info(3048580000, 9231535)
 		self.assertTrue(type(result) is int)
+		
+	def test_read_ports_with_name(self):
+		dao = MessageDAO(True)
+		result = dao.read_ports_with_name("ABC", "Japan")
+		self.assertTrue(type(result) is str)
+		
+		
 
 	def test_convert_time(self):
 		dao = MessageDAO()
@@ -391,6 +425,14 @@ class DAOTest (unittest.TestCase):
 		testMMSI = 257961000
 		resultArray = dao.read_most_recent_positions_MMSI(testMMSI)
 		self.assertEqual(list((257961000, 9231535, 12.809015, 55.003160)), resultArray[0])
+	
+	def test_read_permanent_info(self):
+		dao = MessageDAO()
+		testMMSI = 257961000
+		testIMO = 9231535
+		resultArray = dao.read_permanent_info(testMMSI, testIMO)
+		self.assertEqual(list((257961000, 9231535, 'Normand Cutter', 12.809015, 55.003160)), resultArray[0])
+		
 		
 		
 	
