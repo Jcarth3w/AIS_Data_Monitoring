@@ -49,7 +49,6 @@ class MessageDAO:
 		cursor = cnx.cursor(prepared=True)
 		print("\nLoading MAP data into database, please wait.")
 
-
 		cursor.executemany("""INSERT INTO MAP_VIEW VALUES
 		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
 		mapTileList[1:])
@@ -58,7 +57,7 @@ class MessageDAO:
 		rowcount = cursor.rowcount
 		cnx.close()
 		return abs(rowcount)
-	
+
 	def load_port_data(self):
 		with open('PORT.csv', 'r') as object:
 			reader = csv.reader(object, delimiter = ';')
@@ -70,7 +69,6 @@ class MessageDAO:
 		cnx = Mysql_connector.getConnection()
 		cursor = cnx.cursor(prepared=True)
 
-		print(portDataList[1])
 		cursor.executemany("""INSERT INTO PORT VALUES
 		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
 		portDataList[1:])
@@ -86,6 +84,11 @@ class MessageDAO:
 		try:
 			
 			array = json.loads(batch)
+
+			newarray = []
+			if isinstance(array, dict):
+				newarray.append(array)
+				array = newarray
 			
 		except Exception as e:
 			print(e)
@@ -97,7 +100,10 @@ class MessageDAO:
 			cnx = Mysql_connector.getConnection()
 			
 			cursor = cnx.cursor(prepared=True)
-			
+
+			cursor.execute("SELECT COUNT(*) FROM AIS_MESSAGE")
+			initalrowcount = cursor.fetchall()[0][0]
+			cursor.reset()
 			
 			for message in array:
 				#extract all the AIS_MESSAGE  and add them to the ais_message list
@@ -142,11 +148,14 @@ class MessageDAO:
 				
 					cursor.execute("""INSERT INTO POSITION_REPORT VALUES(LAST_INSERT_ID(), %s, %s, %s, %s, %s, %s)""", 
 					list((longitude, lattitude, lastStaticData_id, mapview1, mapview2, mapview3)))
-				
+			
 			cursor.reset()
 			cnx.commit()
-			cursor.execute("SELECT COUNT(*) FROM AIS_MESSAGE") 
-			return cursor.fetchall()[0][0]
+			cursor.execute("SELECT COUNT(*) FROM AIS_MESSAGE")
+			rowcount = cursor.fetchall()[0][0]
+			cnx.close()
+
+			return abs(rowcount - initalrowcount)
 	
 	
 	def delete_msg_timestamp (self):
@@ -280,6 +289,8 @@ class DAOTest (unittest.TestCase):
                 {\"Timestamp\":\"2022-12-06T14:56:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
                 {\"Timestamp\":\"2022-12-06T14:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240}]"""
 
+	messageDocument = """{\"Timestamp\":\"2022-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":9999999,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"YAHOOTEST\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30}"""	
+	
 	#Test to delete all data from the Datastore. For testing purpose
 	def test_delete_all_messages(self):
 		cnx = Mysql_connector.getConnection()
@@ -355,6 +366,11 @@ class DAOTest (unittest.TestCase):
 		dao = MessageDAO()
 		statements = dao.insert_messages(self.batch1)
 		self.assertEqual(statements, 6)
+
+	def test_insert_single_message(self):
+		dao = MessageDAO()
+		statements = dao.insert_messages(self.messageDocument)
+		self.assertEqual(statements, 1)
 	
 	def test_delete_msg_timestamp2 (self):
 		dao = MessageDAO()
