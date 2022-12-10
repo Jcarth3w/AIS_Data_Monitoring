@@ -77,6 +77,70 @@ class MessageDAO:
 		rowcount = cursor.rowcount
 		cnx.close()
 		return abs(rowcount)
+		
+	
+	def load_ais_messages(self):
+	
+	
+		with open('AIS_MESSAGE.csv', 'r') as object:
+			reader = csv.reader(object, delimiter =';')
+			aisDataList = list((reader))
+			insertedList = [[]*6 for i in range(1, 50)]
+			for i in range(1050, 1100):
+				aisDataList[i].insert(4, None)
+				tempList = []
+				
+				for j in range(len(aisDataList[i])):
+					if aisDataList[i][j] =='\\N':
+						aisDataList[i][j] = None
+					tempList.append(aisDataList[i][j])
+				insertedList.append(tempList)
+					
+				
+				
+
+		#print(insertedList)
+					
+		cnx = Mysql_connector.getConnection()
+		cursor = cnx.cursor(prepared=True)
+		
+		cursor.execute("""DELETE FROM AIS_MESSAGE;""")
+		
+		cursor.executemany("""INSERT INTO AIS_MESSAGE VALUES (
+		%s, %s, %s, %s, %s, %s)""", insertedList[1:])
+		
+		
+		
+		cnx.commit()
+		rowcount = cursor.rowcount
+		cnx.close()
+		return abs(rowcount)
+		
+	def load_position_reports(self):
+		with open('POSITION_REPORT.csv', 'r') as object:
+			reader = csv.reader(object, delimiter =';')
+			posReportDataList = list((reader))
+			insertedList = [[]*6 for i in range(1,50)]
+			for i in range(986, 1034):
+				posReportDataList[i].pop(8)
+				tempList = []
+				for j in range(len(posReportDataList[i])):
+					if posReportDataList[i][j] =='\\N':
+						posReportDataList[i][j] = None
+					tempList.append(posReportDataList[i][j])
+				insertedList.append(tempList)
+		
+						
+		cnx = Mysql_connector.getConnection()
+		cursor = cnx.cursor(prepared=True)
+		
+		cursor.executemany("""INSERT INTO POSITION_REPORT VALUES
+		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", insertedList[1:])
+		
+		cnx.commit()
+		cursor.execute("SELECT COUNT(*) FROM POSITION_REPORT")
+		rowcount = cursor.fetchall()[0][0]
+		return abs(rowcount)
 
 	#function that inserts a batch of AIS Messages
 	#can be either position_report or static_data
@@ -111,8 +175,8 @@ class MessageDAO:
 				shipClass = message['Class']
 				mmsi = message['MMSI']
 				msgType = message['MsgType']
-				cursor.execute("""INSERT INTO AIS_MESSAGE VALUES(%s, %s, %s, %s, %s)""", 
-				list((None, datetime.datetime.fromisoformat(timeStamp), shipClass, mmsi, msgType)))
+				cursor.execute("""INSERT INTO AIS_MESSAGE VALUES(%s, %s, %s, %s, %s, %s)""", 
+				list((None, datetime.datetime.fromisoformat(timeStamp), mmsi, shipClass, msgType, None)))
 				#if the message type is static data, extract all of the fields for static data
 				if msgType == "static_data":
 					imo = message['IMO']
@@ -137,17 +201,23 @@ class MessageDAO:
 				elif msgType == "position_report":
 					position = message['Position']
 					coordinates = position['coordinates']
-					longitude = coordinates[0]
-					lattitude = coordinates[1]
+					latitude = coordinates[0]
+					longitude = coordinates[1]
+					status = message['Status']
+					rot = message['RoT']
+					sog = message['SoG']
+					cog = message['CoG']
+					heading = message['Heading']
 				
 				#how do we get these values?
-					lastStaticData_id = None
 					mapview1 = None
 					mapview2 = None
 					mapview3 = None
 				
-					cursor.execute("""INSERT INTO POSITION_REPORT VALUES(LAST_INSERT_ID(), %s, %s, %s, %s, %s, %s)""", 
-					list((longitude, lattitude, lastStaticData_id, mapview1, mapview2, mapview3)))
+					cursor.execute("""INSERT INTO POSITION_REPORT VALUES(LAST_INSERT_ID(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
+
+					list((status, longitude, latitude, rot, sog, cog, heading, mapview1, mapview2, mapview3)))
+			
 			
 			cursor.reset()
 			cnx.commit()
@@ -241,10 +311,13 @@ class MessageDAO:
 
 			returnedList = cursor.fetchall()
 			
+			
 			for value in range(len(returnedList)):
-				returnedList[value] = list(returnedList[value])
+				returnedList[value] = list((returnedList[value]))
+				
 				returnedList[value][3] = float(returnedList[value][3])
 				returnedList[value][4] = float(returnedList[value][4])
+				
 			
 			return returnedList
 
@@ -266,6 +339,26 @@ class MessageDAO:
 				return str(name)
 			except:
 				return -1
+				
+		else:
+			valuesForQuery = []
+			valuesForQuery.append(name)
+			valuesForQuery.append(country)
+			cnx = Mysql_connector.getConnection()
+			cursor = cnx.cursor(prepared=True)
+			cursor.execute("""SELECT * FROM PORT WHERE Name=%s AND Country=%s;""", valuesForQuery)
+			
+			returnedList = cursor.fetchall()
+			
+			for value in range(len(returnedList)):
+				returnedList[value] = list((returnedList[value]))
+				returnedList[value].pop(6)
+				
+				returnedList[value][4] = float(returnedList[value][4])
+				returnedList[value][5] = float(returnedList[value][5])
+				
+			return returnedList
+				
 		
 	def read_positions_tile3_port(self, port_name, country):
 		pass
@@ -318,6 +411,8 @@ class DAOTest (unittest.TestCase):
 
 	messageDocument = """{\"Timestamp\":\"2022-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":9999999,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"YAHOOTEST\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30}"""	
 	
+	
+	
 	#Test to delete all data from the Datastore. For testing purpose
 	def test_delete_all_messages(self):
 		cnx = Mysql_connector.getConnection()
@@ -328,7 +423,9 @@ class DAOTest (unittest.TestCase):
 		cursor.execute("""DELETE FROM PORT;""")
 		cnx.commit()
 		self.assertTrue(True)
+		
 	
+		
 	#tests correct insertion type
 	def test_insert_messages (self):
 		dao = MessageDAO(True)
@@ -355,7 +452,6 @@ class DAOTest (unittest.TestCase):
 		result = dao.read_most_recent_positions()
 		self.assertTrue(type(result) is type(array))
 		
-		
 	def test_most_recent_pos_mmsi(self):
 		dao = MessageDAO(True)
 		result = dao.read_most_recent_positions_MMSI(3048580000)
@@ -371,7 +467,6 @@ class DAOTest (unittest.TestCase):
 		dao = MessageDAO(True)
 		result = dao.read_ports_with_name("ABC", "Japan")
 		self.assertTrue(type(result) is str)
-		
 		
 
 	def test_convert_time(self):
@@ -394,13 +489,25 @@ class DAOTest (unittest.TestCase):
 		rowsInserted = dao.load_port_data()
 		self.assertEqual(150, rowsInserted)
 	
+	def test_load_position_reports(self):
+		dao = MessageDAO()
+		rowsInserted = dao.load_position_reports()
+		self.assertEquals(48, rowsInserted)
+		
+	def test_load_ais_messages(self):
+
+		dao = MessageDAO()
+		rowsInserted = dao.load_ais_messages()
+		self.assertEqual(386, rowsInserted)	
+		
 ########Integration Tests###########
 		
 	def test_insert_messages3 (self):
 		dao = MessageDAO()
 		statements = dao.insert_messages(self.batch1)
-		self.assertEqual(statements, 6)
 
+		self.assertEqual(statements, 6)
+		
 	def test_insert_single_message(self):
 		dao = MessageDAO()
 		statements = dao.insert_messages(self.messageDocument)
@@ -417,21 +524,28 @@ class DAOTest (unittest.TestCase):
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
 		resultArray = dao.read_most_recent_positions()
-		self.assertEqual(list((219005465, 11.929218, 54.572602)), resultArray[0])
-		self.assertEqual(list((257961000, 12.809015, 55.00316)), resultArray[1])
+		self.assertEqual(list((219005465, 54.572602, 11.929218)), resultArray[0])
+		self.assertEqual(list((257961000, 55.00316, 12.809015)), resultArray[1])
 		
 	def test_read_most_recent_pos_mmsi2(self):
 		dao = MessageDAO()
 		testMMSI = 257961000
 		resultArray = dao.read_most_recent_positions_MMSI(testMMSI)
-		self.assertEqual(list((257961000, 9231535, 12.809015, 55.003160)), resultArray[0])
+		self.assertEqual(list((257961000, 9231535, 55.003160, 12.809015)), resultArray[0])
 	
 	def test_read_permanent_info(self):
 		dao = MessageDAO()
 		testMMSI = 257961000
 		testIMO = 9231535
 		resultArray = dao.read_permanent_info(testMMSI, testIMO)
-		self.assertEqual(list((257961000, 9231535, 'Normand Cutter', 12.809015, 55.003160)), resultArray[0])
+		self.assertEqual(list((257961000, 9231535, 'Normand Cutter',55.003160, 12.809015)), resultArray[0])
+		
+	def test_read_port_with_name(self):
+		dao = MessageDAO()
+		expectedArray = [[381, 'DKNBG', 'Nyborg', 'Denmark', 10.810833, 55.298889, 1, 5331, 53312], 
+		[4970, None, 'Nyborg', 'Denmark', 10.790833, 55.306944, 1, 5331, 53312]]
+		resultArray = dao.read_ports_with_name('Nyborg', 'Denmark')
+		self.assertEqual(expectedArray, resultArray)
 		
 		
 		
