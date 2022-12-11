@@ -23,7 +23,7 @@ create table VESSEL(
 );
 
 
-#Map Tile Tabale
+#Map Tile Table
 create table MAP_VIEW(
 	Id mediumint,
 	Name varchar(10),
