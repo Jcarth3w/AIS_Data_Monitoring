@@ -374,7 +374,31 @@ class MessageDAO:
 				
 		
 	def read_positions_tile3_port(self, port_name, country):
-		pass
+		if self.test_mode:
+			try:
+				return str(port_name)
+			except:
+				return -1
+				
+		else:
+		
+			valuesForQuery = []
+			valuesForQuery.append(port_name)
+			valuesForQuery.append(country)
+			cnx = Mysql_connector.getConnection()
+			cursor = cnx.cursor(prepared=True)
+			cursor.execute("""SELECT ves.MMSI, IMO, pr.Latitude, pr.Longitude FROM PORT, POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE PORT.Name=%s AND PORT.Country=%s AND pr.MapView3_Id=PORT.MapView3_Id AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC;""", valuesForQuery)
+			
+			returnedList = cursor.fetchall()
+			
+			for value in range(len(returnedList)):
+				returnedList[value] = list((returnedList[value]))
+				
+				returnedList[value][2] = float(returnedList[value][2])
+				returnedList[value][3] = float(returnedList[value][3])
+				
+			return returnedList
+			
 
     	
 
@@ -486,7 +510,11 @@ class DAOTest (unittest.TestCase):
 		result = dao.read_most_recent_in_tile(5361)
 		self.assertTrue(type(result) is int)
 		
-
+	def test_read_positions_tile3_port(self):
+		dao = MessageDAO(True)
+		result = dao.read_positions_tile3_port("Aabenraa", "Denmark")
+		self.assertTrue(type(result) is str)
+		
 	def test_convert_time(self):
 		dao = MessageDAO()
 		convertedTime = "2020-11-18 00:00:00.000"
@@ -569,6 +597,12 @@ class DAOTest (unittest.TestCase):
 		dao = MessageDAO()
 		expectedArray = [[220043000, 4026519, 57.120583, 8.599218],[220043000, 8996413, 57.120583, 8.599218]]
 		resultArray = dao.read_most_recent_in_tile(5139)
+		self.assertEqual(expectedArray, resultArray)
+		
+	def test_read_positions_tile3_port2(self):
+		dao = MessageDAO()
+		expectedArray = [[219000647, 9080132, 55.04231, 9.423348]]
+		resultArray = dao.read_positions_tile3_port("Aabenraa", "Denmark")
 		self.assertEqual(expectedArray, resultArray)
 		
 		
