@@ -80,8 +80,6 @@ class MessageDAO:
 
 
 	def load_ais_messages(self):
-
-
 		with open('AIS_MESSAGE.csv', 'r') as object:
 			reader = csv.reader(object, delimiter =';')
 			aisDataList = list((reader))
@@ -319,8 +317,86 @@ class MessageDAO:
 
 
 
-	def insert_single_message(self):
-		pass
+	def insert_single_message(self, message):
+		try:
+
+			array = json.loads(message)
+
+			newarray = []
+			if isinstance(array, dict):
+				newarray.append(array)
+				array = newarray
+
+		except Exception as e:
+			print(e)
+			return -1
+
+		if self.test_mode:
+			return len(array)
+		else:
+			cnx = Mysql_connector.getConnection()
+
+			cursor = cnx.cursor(prepared=True)
+
+			cursor.execute("SELECT COUNT(*) FROM AIS_MESSAGE")
+			initalrowcount = cursor.fetchall()[0][0]
+			cursor.reset()
+
+			for message in array:
+				#extract all the AIS_MESSAGE  and add them to the ais_message list
+				timeStamp = self.convert_time(message['Timestamp'])
+				shipClass = message['Class']
+				mmsi = message['MMSI']
+				msgType = message['MsgType']
+				cursor.execute("""INSERT INTO AIS_MESSAGE VALUES(%s, %s, %s, %s, %s, %s)""",
+							   list((None, datetime.datetime.fromisoformat(timeStamp), mmsi, shipClass, msgType, None)))
+				#if the message type is static data, extract all of the fields for static data
+				if msgType == "static_data":
+					imo = message['IMO']
+					if imo == 'Unknown':
+						imo = None
+
+					try:
+						callsign = message['CallSign']
+
+					except:
+						callsign = None
+
+					try:
+						destination_id = message['Destination']
+					except:
+						destination_id = None
+
+					cursor.execute("""INSERT INTO STATIC_DATA VALUES(LAST_INSERT_ID(), %s, %s, %s)""",
+								   list((imo, callsign, destination_id)))
+
+				#if the message type is position report extract all the fields and add them to associated list
+				elif msgType == "position_report":
+					position = message['Position']
+					coordinates = position['coordinates']
+					latitude = coordinates[0]
+					longitude = coordinates[1]
+					status = message['Status']
+					rot = message['RoT']
+					sog = message['SoG']
+					cog = message['CoG']
+					heading = message['Heading']
+
+					mapview3 = None
+					mapview2 = None
+					mapview1 = None
+
+
+			cursor.reset()
+			cnx.commit()
+			cursor.execute("SELECT COUNT(*) FROM AIS_MESSAGE")
+			rowcount = cursor.fetchall()[0][0]
+			cnx.close()
+
+			if abs(rowcount - initalrowcount)==1:
+				return True
+			else:
+				return abs(rowcount - initalrowcount)
 
 	def read_most_recent_in_tile(self, tileID):
 		if self.test_mode:
@@ -405,16 +481,16 @@ class MessageDAO:
                 return int(mmsi)
             except:
                 return -1
-
         else:
             cnx = Mysql_connector.getConnection()
 
             mmsiInQuery = []
             mmsiInQuery.append(mmsi)
             cursor = cnx.cursor(prepared=True)
-            cursor.execute("""SELECT ves.MMSI, IMO, Ts, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
+            cursor.execute("""SELECT IMO, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
 
             returnedList = cursor.fetchall()
+			imo = 0
             for value in range(len(returnedList)):
                 returnedList[value] = list(returnedList[value])
                 imo = returnedList[value].pop(0)
@@ -422,7 +498,7 @@ class MessageDAO:
                 returnedList[value][0] = float(returnedList[value][0])
                 returnedList[value][1] = float(returnedList[value][1])
 
-        return {"MMSI": mmsi, "Positions": returnedList, "IMO": imo}
+        	return dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
 
 #connection class
 class Mysql_connector():
