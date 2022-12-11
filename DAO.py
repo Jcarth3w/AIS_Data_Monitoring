@@ -104,8 +104,6 @@ class MessageDAO:
 		cnx = Mysql_connector.getConnection()
 		cursor = cnx.cursor(prepared=True)
 		
-		cursor.execute("""DELETE FROM AIS_MESSAGE;""")
-		
 		cursor.executemany("""INSERT INTO AIS_MESSAGE VALUES (
 		%s, %s, %s, %s, %s, %s)""", insertedList[1:])
 		
@@ -208,16 +206,11 @@ class MessageDAO:
 					sog = message['SoG']
 					cog = message['CoG']
 					heading = message['Heading']
-				
-				#how do we get these values?
-					mapview1 = None
-					mapview2 = None
+		
 					mapview3 = None
+					mapview2 = None
+					mapview1 = None
 				
-					cursor.execute("""INSERT INTO POSITION_REPORT VALUES(LAST_INSERT_ID(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", 
-
-					list((status, longitude, latitude, rot, sog, cog, heading, mapview1, mapview2, mapview3)))
-			
 			
 			cursor.reset()
 			cnx.commit()
@@ -296,11 +289,10 @@ class MessageDAO:
 	def read_permanent_info(self, MMSI, IMO):
 		if self.test_mode:
 			try:
-				return int(MMSI), int(IMO)
+				return int(MMSI)
 			except:
 				return -1
 		else:
-		
 		
 			valuesForQuery = []
 			valuesForQuery.append(MMSI)
@@ -330,8 +322,29 @@ class MessageDAO:
 	def insert_single_message(self):
 		pass
 	
-	def read_most_recent_in_tile(self):
-		pass
+	def read_most_recent_in_tile(self, tileID):
+		if self.test_mode:
+			try:
+				return int(tileID)
+			except:
+				return -1
+		else:
+			#tile_id = []
+			#tile_id.append(tileID)
+			cnx = Mysql_connector.getConnection()
+			cursor = cnx.cursor(prepared=True)
+			cursor.execute("""SELECT ves.MMSI, IMO, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE (pr.MapView1_Id=%s OR pr.MapView2_Id=%s OR pr.MapView3_Id=%s) AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC;""", list((tileID, tileID, tileID)))
+			
+			returnedList = cursor.fetchall()
+			
+			for value in range(len(returnedList)):
+				returnedList[value] = list((returnedList[value]))
+				
+				returnedList[value][2] = float(returnedList[value][2])
+				returnedList[value][3] = float(returnedList[value][3])
+     		
+				
+			return returnedList
 		
 	def read_ports_with_name(self, name, country):
 		if self.test_mode:
@@ -468,6 +481,11 @@ class DAOTest (unittest.TestCase):
 		result = dao.read_ports_with_name("ABC", "Japan")
 		self.assertTrue(type(result) is str)
 		
+	def test_most_recent_in_tile(self):
+		dao = MessageDAO(True)
+		result = dao.read_most_recent_in_tile(5361)
+		self.assertTrue(type(result) is int)
+		
 
 	def test_convert_time(self):
 		dao = MessageDAO()
@@ -492,13 +510,13 @@ class DAOTest (unittest.TestCase):
 	def test_load_position_reports(self):
 		dao = MessageDAO()
 		rowsInserted = dao.load_position_reports()
-		self.assertEquals(48, rowsInserted)
+		self.assertEqual(48, rowsInserted)
 		
 	def test_load_ais_messages(self):
 
 		dao = MessageDAO()
 		rowsInserted = dao.load_ais_messages()
-		self.assertEqual(386, rowsInserted)	
+		self.assertEqual(2, rowsInserted)	
 		
 ########Integration Tests###########
 		
@@ -524,32 +542,46 @@ class DAOTest (unittest.TestCase):
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
 		resultArray = dao.read_most_recent_positions()
-		self.assertEqual(list((219005465, 54.572602, 11.929218)), resultArray[0])
-		self.assertEqual(list((257961000, 55.00316, 12.809015)), resultArray[1])
+		self.assertEqual(list((219024178, 54.571808, 11.928697)), resultArray[0])
+		self.assertEqual(list((219015362, 57.120712, 8.599567)), resultArray[1])
 		
 	def test_read_most_recent_pos_mmsi2(self):
 		dao = MessageDAO()
-		testMMSI = 257961000
+		testMMSI = 304858000
 		resultArray = dao.read_most_recent_positions_MMSI(testMMSI)
-		self.assertEqual(list((257961000, 9231535, 55.003160, 12.809015)), resultArray[0])
+		self.assertEqual(list((304858000, 8214358, 55.21829, 13.372545)), resultArray[0])
 	
-	def test_read_permanent_info(self):
+	def test_read_permanent_info2(self):
 		dao = MessageDAO()
-		testMMSI = 257961000
-		testIMO = 9231535
+		testMMSI = 304858000
+		testIMO = 8214358
 		resultArray = dao.read_permanent_info(testMMSI, testIMO)
-		self.assertEqual(list((257961000, 9231535, 'Normand Cutter',55.003160, 12.809015)), resultArray[0])
+		self.assertEqual(list((304858000, 8214358, 'St.Pauli', 55.21829, 13.372545)), resultArray[0])
 		
-	def test_read_port_with_name(self):
+	def test_read_port_with_name2(self):
 		dao = MessageDAO()
 		expectedArray = [[381, 'DKNBG', 'Nyborg', 'Denmark', 10.810833, 55.298889, 1, 5331, 53312], 
 		[4970, None, 'Nyborg', 'Denmark', 10.790833, 55.306944, 1, 5331, 53312]]
 		resultArray = dao.read_ports_with_name('Nyborg', 'Denmark')
 		self.assertEqual(expectedArray, resultArray)
 		
+	def test_most_recent_in_tile2(self):
+		dao = MessageDAO()
+		expectedArray = [[220043000, 4026519, 57.120583, 8.599218],[220043000, 8996413, 57.120583, 8.599218]]
+		resultArray = dao.read_most_recent_in_tile(5139)
+		self.assertEqual(expectedArray, resultArray)
 		
 		
 	
 unittest.main()
+
+
+
+
+
+
+
+
+
 
 
