@@ -377,7 +377,7 @@ class MessageDAO:
         			
         		return dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
 
-<<<<<<< HEAD
+
 	def read_last_five_positions(self, mmsi):
 		if self.test_mode:
 			try:
@@ -403,9 +403,6 @@ class MessageDAO:
 
 			return dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
 
-=======
-            
->>>>>>> ae22205 (Add data loading shell scripts. Remove repeated code)
 #connection class
 class Mysql_connector():
 
@@ -524,31 +521,6 @@ class DAOTest (unittest.TestCase):
 		convertedTime = "2020-11-18 00:00:00.000"
 		self.assertEqual(convertedTime, dao.convert_time("2020-11-18T00:00:00.000Z"))
 
-	#def test_load_vessel_data(self):
-	#	dao = MessageDAO()
-	#	rowsInserted = dao.load_vessel_data()
-	#	self.assertEqual(204477, rowsInserted)
-
-	#def test_load_map_data(self):
-	#	dao = MessageDAO()
-	#	rowsInserted = dao.load_map_data()
-	#	self.assertEqual(171, rowsInserted)
-
-	#def test_load_port_data(self):
-	#	dao = MessageDAO()
-	#	rowsInserted = dao.load_port_data()
-	#	self.assertEqual(150, rowsInserted)
-
-	#def test_load_position_reports(self):
-	#	dao = MessageDAO()
-	#	rowsInserted = dao.load_position_reports()
-	#	self.assertEqual(48, rowsInserted)
-
-	#def test_load_ais_messages(self):
-
-	#	dao = MessageDAO()
-	#	rowsInserted = dao.load_ais_messages()
-	#	self.assertEqual(2, rowsInserted)
 
 ########Integration Tests###########
 
