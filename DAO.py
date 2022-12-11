@@ -475,30 +475,30 @@ class MessageDAO:
 
 			return returnedList
 
-    def read_last_five_positions(self, mmsi):
-        if self.test_mode:
-            try:
-                return int(mmsi)
-            except:
-                return -1
-        else:
-            cnx = Mysql_connector.getConnection()
+	def read_last_five_positions(self, mmsi):
+		if self.test_mode:
+			try:
+				return int(mmsi)
+			except:
+				return -1
+		else:
+			cnx = Mysql_connector.getConnection()
 
-            mmsiInQuery = []
-            mmsiInQuery.append(mmsi)
-            cursor = cnx.cursor(prepared=True)
-            cursor.execute("""SELECT IMO, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
+			mmsiInQuery = []
+			mmsiInQuery.append(mmsi)
+			cursor = cnx.cursor(prepared=True)
+			cursor.execute("""SELECT IMO, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
 
-            returnedList = cursor.fetchall()
+			returnedList = cursor.fetchall()
 			imo = 0
-            for value in range(len(returnedList)):
-                returnedList[value] = list(returnedList[value])
-                imo = returnedList[value].pop(0)
+			for value in range(len(returnedList)):
+				returnedList[value] = list(returnedList[value])
+				imo = returnedList[value].pop(0)
 
-                returnedList[value][0] = float(returnedList[value][0])
-                returnedList[value][1] = float(returnedList[value][1])
+				returnedList[value][0] = float(returnedList[value][0])
+				returnedList[value][1] = float(returnedList[value][1])
 
-        	return dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
+			return dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
 
 #connection class
 class Mysql_connector():
