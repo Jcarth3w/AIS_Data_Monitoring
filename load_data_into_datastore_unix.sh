@@ -1,0 +1,1 @@
+python3 load_data_into_datastore.py

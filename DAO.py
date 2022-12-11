@@ -13,130 +13,6 @@ class MessageDAO:
 		self.test_mode=test_mode
 		self.Mysql_connector = Mysql_connector()
 
-	def load_vessel_data(self):
-		with open('VESSEL.csv', 'r') as object:
-			reader = csv.reader(object)
-			vesselList = list((reader))
-			for i in range(1, len(vesselList)):
-				vesselList[i][0] = int(vesselList[i][0])
-				for j in range(len(vesselList[i])):
-					if vesselList[i][j] == '\\N':
-						vesselList[i][j] = None
-
-		cnx = Mysql_connector.getConnection()
-		cursor = cnx.cursor(prepared=True)
-		print("\nLoading VESSEL data into database, please wait.")
-
-		cursor.executemany("""INSERT INTO VESSEL VALUES
-		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-		vesselList[1:])
-
-		cnx.commit()
-		rowcount = cursor.rowcount
-		cnx.close()
-		return abs(rowcount)
-
-	def load_map_data(self):
-		with open('MAP_VIEW.csv', 'r') as object:
-			reader = csv.reader(object)
-			mapTileList = list((reader))
-			for i in range(1, len(mapTileList)):
-				for j in range(len(mapTileList[i])):
-					if mapTileList[i][j] == '\\N':
-						mapTileList[i][j] = None
-
-		cnx = Mysql_connector.getConnection()
-		cursor = cnx.cursor(prepared=True)
-		print("\nLoading MAP data into database, please wait.")
-
-		cursor.executemany("""INSERT INTO MAP_VIEW VALUES
-		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-		mapTileList[1:])
-
-		cnx.commit()
-		rowcount = cursor.rowcount
-		cnx.close()
-		return abs(rowcount)
-
-	def load_port_data(self):
-		with open('PORT.csv', 'r') as object:
-			reader = csv.reader(object, delimiter = ';')
-			portDataList = list((reader))
-			for i in range(1, len(portDataList)):
-				for j in range(len(portDataList[i])):
-					if portDataList[i][j] == '\\N':
-						portDataList[i][j] = None
-		cnx = Mysql_connector.getConnection()
-		cursor = cnx.cursor(prepared=True)
-
-		cursor.executemany("""INSERT INTO PORT VALUES
-		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-		portDataList[1:])
-
-		cnx.commit()
-		rowcount = cursor.rowcount
-		cnx.close()
-		return abs(rowcount)
-
-
-	def load_ais_messages(self):
-		with open('AIS_MESSAGE.csv', 'r') as object:
-			reader = csv.reader(object, delimiter =';')
-			aisDataList = list((reader))
-			insertedList = [[]*6 for i in range(1, 50)]
-			for i in range(1050, 1100):
-				aisDataList[i].insert(4, None)
-				tempList = []
-
-				for j in range(len(aisDataList[i])):
-					if aisDataList[i][j] =='\\N':
-						aisDataList[i][j] = None
-					tempList.append(aisDataList[i][j])
-				insertedList.append(tempList)
-
-
-
-
-		#print(insertedList)
-
-		cnx = Mysql_connector.getConnection()
-		cursor = cnx.cursor(prepared=True)
-
-		cursor.executemany("""INSERT INTO AIS_MESSAGE VALUES (
-		%s, %s, %s, %s, %s, %s)""", insertedList[1:])
-
-
-
-		cnx.commit()
-		rowcount = cursor.rowcount
-		cnx.close()
-		return abs(rowcount)
-
-	def load_position_reports(self):
-		with open('POSITION_REPORT.csv', 'r') as object:
-			reader = csv.reader(object, delimiter =';')
-			posReportDataList = list((reader))
-			insertedList = [[]*6 for i in range(1,50)]
-			for i in range(986, 1034):
-				posReportDataList[i].pop(8)
-				tempList = []
-				for j in range(len(posReportDataList[i])):
-					if posReportDataList[i][j] =='\\N':
-						posReportDataList[i][j] = None
-					tempList.append(posReportDataList[i][j])
-				insertedList.append(tempList)
-
-
-		cnx = Mysql_connector.getConnection()
-		cursor = cnx.cursor(prepared=True)
-
-		cursor.executemany("""INSERT INTO POSITION_REPORT VALUES
-		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", insertedList[1:])
-
-		cnx.commit()
-		cursor.execute("SELECT COUNT(*) FROM POSITION_REPORT")
-		rowcount = cursor.fetchall()[0][0]
-		return abs(rowcount)
 
 	#function that inserts a batch of AIS Messages
 	#can be either position_report or static_data
@@ -474,7 +350,34 @@ class MessageDAO:
 				returnedList[value][3] = float(returnedList[value][3])
 
 			return returnedList
+			
+			
+	def read_last_five_positions(self, mmsi):
+		if self.test_mode:
+			try:
+				return int(mmsi)
+			except:
+				return -1 
+		else:
+        		mmsiInQuery = []
+        		mmsiInQuery.append(mmsi)
+        		cnx = Mysql_connector.getConnection()
+        		cursor = cnx.cursor(prepared=True)
+        		cursor.execute("""SELECT IMO, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
+        		
+        		returnedList = cursor.fetchall()
+        		imo =0
+        		
+        		for value in range(len(returnedList)):
+        			returnedLIst[value] = list(returnedList[value])
+        			imo = retrunedList[value].pop(0)
+        			
+        			retrunedList[value][0] = float(returnedList[value][0])
+        			returnedList[value][1] = float(returnedList[value][1])
+        			
+        		return dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
 
+<<<<<<< HEAD
 	def read_last_five_positions(self, mmsi):
 		if self.test_mode:
 			try:
@@ -500,6 +403,9 @@ class MessageDAO:
 
 			return dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
 
+=======
+            
+>>>>>>> ae22205 (Add data loading shell scripts. Remove repeated code)
 #connection class
 class Mysql_connector():
 
@@ -540,24 +446,24 @@ class DAOTest (unittest.TestCase):
                 {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257385000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.219403,13.127725]},\"Status\":\"Under way using engine\",\"RoT\":25.7,\"SoG\":12.3,\"CoG\":96.5,\"Heading\":101},
                 {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":376503000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.519373,11.47914]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":7.6,\"CoG\":294.4,\"Heading\":290} ]"""
 
-	batch2 = """[{\"Timestamp\":\"2022-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
-                {\"Timestamp\":\"2022-12-06T14:56:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
-                {\"Timestamp\":\"2022-12-06T14:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240}]"""
+	batch2 = """[{\"Timestamp\":\"2019-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
+                {\"Timestamp\":\"2019-12-06T14:56:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
+                {\"Timestamp\":\"2019-12-06T14:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240}]"""
 
 	messageDocument = """{\"Timestamp\":\"2022-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":9999999,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"YAHOOTEST\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30}"""
 
 
 
 	#Test to delete all data from the Datastore. For testing purpose
-	def test_delete_all_messages(self):
-		cnx = Mysql_connector.getConnection()
-		cursor = cnx.cursor(prepared=True)
-		cursor.execute("""DELETE FROM AIS_MESSAGE;""")
+	#def test_delete_all_messages(self):
+	#	cnx = Mysql_connector.getConnection()
+	#	cursor = cnx.cursor(prepared=True)
+	#	cursor.execute("""DELETE FROM AIS_MESSAGE;""")
 	#	cursor.execute("""DELETE FROM VESSEL;""")
-		cursor.execute("""DELETE FROM MAP_VIEW;""")
-		cursor.execute("""DELETE FROM PORT;""")
-		cnx.commit()
-		self.assertTrue(True)
+	#	cursor.execute("""DELETE FROM MAP_VIEW;""")
+	#	cursor.execute("""DELETE FROM PORT;""")
+	#	cnx.commit()
+	#	self.assertTrue(True)
 
 
 
@@ -623,26 +529,26 @@ class DAOTest (unittest.TestCase):
 	#	rowsInserted = dao.load_vessel_data()
 	#	self.assertEqual(204477, rowsInserted)
 
-	def test_load_map_data(self):
-		dao = MessageDAO()
-		rowsInserted = dao.load_map_data()
-		self.assertEqual(171, rowsInserted)
+	#def test_load_map_data(self):
+	#	dao = MessageDAO()
+	#	rowsInserted = dao.load_map_data()
+	#	self.assertEqual(171, rowsInserted)
 
-	def test_load_port_data(self):
-		dao = MessageDAO()
-		rowsInserted = dao.load_port_data()
-		self.assertEqual(150, rowsInserted)
+	#def test_load_port_data(self):
+	#	dao = MessageDAO()
+	#	rowsInserted = dao.load_port_data()
+	#	self.assertEqual(150, rowsInserted)
 
-	def test_load_position_reports(self):
-		dao = MessageDAO()
-		rowsInserted = dao.load_position_reports()
-		self.assertEqual(48, rowsInserted)
+	#def test_load_position_reports(self):
+	#	dao = MessageDAO()
+	#	rowsInserted = dao.load_position_reports()
+	#	self.assertEqual(48, rowsInserted)
 
-	def test_load_ais_messages(self):
+	#def test_load_ais_messages(self):
 
-		dao = MessageDAO()
-		rowsInserted = dao.load_ais_messages()
-		self.assertEqual(2, rowsInserted)
+	#	dao = MessageDAO()
+	#	rowsInserted = dao.load_ais_messages()
+	#	self.assertEqual(2, rowsInserted)
 
 ########Integration Tests###########
 
