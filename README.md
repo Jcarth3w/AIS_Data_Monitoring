@@ -15,7 +15,8 @@ and "load_data_into_datastore_win.sh for windows devices from the "Scripts direc
 
 Once you have data loaded you are ready to run the tests.
 
-####BEFORE RUNNING THE TESTS####
+###BEFORE RUNNING THE TESTS###
+
 Ensure the year on your system clock is set to 2019
 
 The reason for this is because of the inserted AIS_MESSAGES. 
