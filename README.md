@@ -1,33 +1,34 @@
+#Contributors
+Jack Carthew - jdcarthew@bsu.edu
+Gavin Neil - grneal@bsu.edu
+Dawson Vaal - dcvaal@bsu.edu
+Wesley Kring - wjkring@bsu.edu
+
+The work contained in this repository is for submission on the AIS Data Monitoring Final Project. The code contained is reflective of option A.
+
 # AIS_Data_Monitoring_Final_Project
 Final project for CS418. Monitors and stores AIS data from ships
 
-###Change the values in the config.ini file to update user credentials for database connection###
+##Instructions for running the program
 
-In order to first load the database, ensure you have the "Datastore.mysql" file in your working directory.
+* The first step is to change the values of ```username``` and ```password``` in the ```config.ini``` file to your own credentials
 
-Then, depending on your Operating System, run the "load_datastore_unix.sh" for MAC/Linux/Unix devices 
-and "load_datastore_windows.ps1" for windows devices from the "Scripts directory".
+* Ensure that the ```Datastore.mysql``` and ```DataCSVFiles``` are in your working direcrory
 
-After loading the database, load the data into the database. Ensure you have the "DataCSVFiles" in your working directory
+* For Unix/Linux/MAC systems run ```load_datastore_unix.sh```
 
-Then, depending on your Operating System, run the "load_data_into_datastore_unix.sh" for MAC/Linux/Unix devices 
-and "load_data_into_datastore_win.sh for windows devices from the "Scripts directory".
+* For Windows select the ```load_datastore_windows.ps1``` from your ```Scripts directory```
 
-Once you have data loaded you are ready to run the tests.
+* Once complete the data shoule be loaded and you are ready to run the tests.
 
 ###BEFORE RUNNING THE TESTS###
 
-Ensure the year on your system clock is set to 2019
+* Ensure the year on your system clock is set to 2019
 
-The reason for this is because of the inserted AIS_MESSAGES. 
-The timestamps in this data are from 2020 therefore are deleted when the test for delete_msg is run
+* The reason for this is because of the inserted AIS_MESSAGES contain a 2020 timestamp and will be deleted when the delete_msg test will run
 
-THE TESTS WILL NOT PASS IF YOUR SYSTEM CLOCK IS NOT CHANGED
+* ```THE TESTS WILL NOT PASS IF YOUR SYSTEM CLOCK IS NOT CHANGED```
 
-If the clock is not changed all the AIS data will be deleted and queries will result in empty sets
-
-
-After you have changed your system clock you are ready to run DAO.py 
-
+* The tests can then be run by running ```DAO.py```
 
 
