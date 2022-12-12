@@ -1,1 +1,0 @@
-python.exe load_data_into_datastore.py

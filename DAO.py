@@ -519,36 +519,36 @@ class MessageDAO:
 		else:
 		
 			#Runs query through connection
-        		mmsiInQuery = []
-        		mmsiInQuery.append(mmsi)
-        		cnx = Mysql_connector.getConnection()
-        		cursor = cnx.cursor(prepared=True)
-        		cursor.execute("""SELECT am.MMSI, Latitude, Longitude, IMO FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
-        		
-        		queryList = cursor.fetchall()
-        		
-        		returnedList = []
-        		
-        		#Removes unwanted field in table
-			#Converts Latitude and Longitude values into float values
-        		for value in range(len(queryList)):
-        			queryList[value] = list(queryList[value])
-        			
-        			queryList[value][1] = float(queryList[value][1])
-        			queryList[value][2] = float(queryList[value][2])
-        			
-        			latitude = str(queryList[value][1])
-        			longitude = str(queryList[value][2])
-        			
-        			imo = queryList[value][3]
-        			returnedList.append({'MMSI' : mmsi, 'Positions' : '[Lat : '+ latitude +', Long : '+longitude+']', 'IMO' : imo})
+				mmsiInQuery = []
+				mmsiInQuery.append(mmsi)
+				cnx = Mysql_connector.getConnection()
+				cursor = cnx.cursor(prepared=True)
+				cursor.execute("""SELECT am.MMSI, Latitude, Longitude, IMO FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
 				
-        			
-        		return returnedList
-        		
-     
-     #Function takes an integer portID value
-     #Returns a list of ship documents in the form  {MMSI : '', Positions : [Lat : '', Long : ''], IMO : ''}
+				queryList = cursor.fetchall()
+				
+				returnedList = []
+				
+				#Removes unwanted field in table
+			#Converts Latitude and Longitude values into float values
+				for value in range(len(queryList)):
+					queryList[value] = list(queryList[value])
+					
+					queryList[value][1] = float(queryList[value][1])
+					queryList[value][2] = float(queryList[value][2])
+					
+					latitude = str(queryList[value][1])
+					longitude = str(queryList[value][2])
+					
+					imo = queryList[value][3]
+					returnedList.append({'MMSI' : mmsi, 'Positions' : '[Lat : '+ latitude +', Long : '+longitude+']', 'IMO' : imo})
+				
+					
+				return returnedList
+				
+	 
+	 #Function takes an integer portID value
+	 #Returns a list of ship documents in the form  {MMSI : '', Positions : [Lat : '', Long : ''], IMO : ''}
 	def read_ships_headed_to_port(self, portID):
 		if self.test_mode:
 			try:
@@ -586,8 +586,8 @@ class MessageDAO:
 			return returnedList
 			
 			
-     			
-     
+				 
+	 
 
 	#Converts timestamp values to work with mysql table insertion
 	def convert_time(self, timestamp):
@@ -628,15 +628,15 @@ class Mysql_connector():
 class DAOTest (unittest.TestCase):
 
 	batch1 = """[ {\"Timestamp\":\"2023-11-18T00:00:40.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
-                {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
-                {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240},
-                {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111923,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"BALTIC2 WINDFARM SW\",\"VesselType\":\"Undefined\",\"Length\":8,\"Breadth\":12,\"A\":4,\"B\":4,\"C\":4,\"D\":8},
-                {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257385000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.219403,13.127725]},\"Status\":\"Under way using engine\",\"RoT\":25.7,\"SoG\":12.3,\"CoG\":96.5,\"Heading\":101},
-                {\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":376503000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.519373,11.47914]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":7.6,\"CoG\":294.4,\"Heading\":290} ]"""
+				{\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
+				{\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240},
+				{\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111923,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"BALTIC2 WINDFARM SW\",\"VesselType\":\"Undefined\",\"Length\":8,\"Breadth\":12,\"A\":4,\"B\":4,\"C\":4,\"D\":8},
+				{\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257385000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.219403,13.127725]},\"Status\":\"Under way using engine\",\"RoT\":25.7,\"SoG\":12.3,\"CoG\":96.5,\"Heading\":101},
+				{\"Timestamp\":\"2023-11-18T00:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":376503000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.519373,11.47914]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":7.6,\"CoG\":294.4,\"Heading\":290} ]"""
 
 	batch2 = """[{\"Timestamp\":\"2022-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":992111840,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"WIND FARM BALTIC1NW\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30},
-                {\"Timestamp\":\"2022-12-06T14:56:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
-                {\"Timestamp\":\"2022-12-06T14:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240}]"""
+				{\"Timestamp\":\"2022-12-06T14:56:00.000Z\",\"Class\":\"Class A\",\"MMSI\":219005465,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[54.572602,11.929218]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0,\"CoG\":298.7,\"Heading\":203},
+				{\"Timestamp\":\"2022-12-06T14:00:00.000Z\",\"Class\":\"Class A\",\"MMSI\":257961000,\"MsgType\":\"position_report\",\"Position\":{\"type\":\"Point\",\"coordinates\":[55.00316,12.809015]},\"Status\":\"Under way using engine\",\"RoT\":0,\"SoG\":0.2,\"CoG\":225.6,\"Heading\":240}]"""
 
 	messageDocument = """{\"Timestamp\":\"2022-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":9999999,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"YAHOOTEST\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30}"""
 
@@ -721,10 +721,10 @@ class DAOTest (unittest.TestCase):
 		convertedTime = "2020-11-18 00:00:00.000"
 		self.assertEqual(convertedTime, dao.convert_time("2020-11-18T00:00:00.000Z"))
 
-	#def test_load_vessel_data(self):
-	#	dao = MessageDAO()
-	#	rowsInserted = dao.load_vessel_data()
-	#	self.assertEqual(204477, rowsInserted)
+	def test_load_vessel_data(self):
+		dao = MessageDAO()
+		rowsInserted = dao.load_vessel_data()
+		self.assertEqual(204477, rowsInserted)
 
 	def test_load_map_data(self):
 		dao = MessageDAO()
@@ -812,7 +812,7 @@ class DAOTest (unittest.TestCase):
 		inserted = dao.insert_messages(data)
 		self.assertEqual(107, inserted)
 	
-	def test_pull_live_data_now(self):
+	def test_read_last_five_positions(self):
 		dao = MessageDAO()
 		testMMSI = 304858000
 		expectedArray = [{'MMSI' : 304858000, 'Positions' : '[Lat : 55.21813, Long : 13.375687]', 'IMO' : 8214358.0},
@@ -829,7 +829,7 @@ class DAOTest (unittest.TestCase):
 		expectedArray = [{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161562, Long : 11.062797]', 'IMO' :8616087.0},
 		{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161338, Long : 11.062742]', 'IMO' :8616087.0},
 		{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161087, Long : 11.062687]', 'IMO' : 8616087.0},
-	  	{'MMSI' : 265011000, 'Positions' : '[Lat : 56.160810, Long : 11.062633]', 'IMO' : 8616087.0}]
+		  {'MMSI' : 265011000, 'Positions' : '[Lat : 56.160810, Long : 11.062633]', 'IMO' : 8616087.0}]
 		resultArray = dao.read_ships_headed_to_port(testPortID)
 		
 
