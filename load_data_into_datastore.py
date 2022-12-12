@@ -88,8 +88,8 @@ class dataLoader:
 			with open('AIS_MESSAGE.csv', 'r') as object:
 				reader = csv.reader(object, delimiter =';')
 				aisDataList = list((reader))
-				insertedList = [[]*6 for i in range(1, 50)]
-				for i in range(1050, 1100):
+				insertedList = []
+				for i in range(1, 5000):
 					aisDataList[i].insert(4, None)
 					tempList = []
 
@@ -99,6 +99,7 @@ class dataLoader:
 						tempList.append(aisDataList[i][j])
 					insertedList.append(tempList)
 
+			print(insertedList)
 			cnx = Mysql_connector.getConnection()
 			cursor = cnx.cursor(prepared=True)
 			print("\nLoading AIS Message data into database, please wait.")
@@ -116,8 +117,8 @@ class dataLoader:
 			with open('POSITION_REPORT.csv', 'r') as object:
 				reader = csv.reader(object, delimiter =';')
 				posReportDataList = list((reader))
-				insertedList = [[]*6 for i in range(1,50)]
-				for i in range(986, 1034):
+				insertedList = []
+				for i in range(1, 4782):
 					posReportDataList[i].pop(8)
 					tempList = []
 					for j in range(len(posReportDataList[i])):
@@ -126,7 +127,7 @@ class dataLoader:
 						tempList.append(posReportDataList[i][j])
 					insertedList.append(tempList)
 
-
+			print(insertedList)
 			cnx = Mysql_connector.getConnection()
 			cursor = cnx.cursor(prepared=True)
 			print("\nLoading Position Report data into database, please wait.")

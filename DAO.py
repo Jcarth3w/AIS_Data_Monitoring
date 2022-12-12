@@ -217,8 +217,6 @@ class MessageDAO:
 			except:
 				return -1
 		else:
-			#tile_id = []
-			#tile_id.append(tileID)
 			cnx = Mysql_connector.getConnection()
 			cursor = cnx.cursor(prepared=True)
 			cursor.execute("""SELECT ves.MMSI, IMO, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE (pr.MapView1_Id=%s OR pr.MapView2_Id=%s OR pr.MapView3_Id=%s) AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC;""", list((tileID, tileID, tileID)))
@@ -319,13 +317,14 @@ class MessageDAO:
         		#Removes unwanted field in table
 			#Converts Latitude and Longitude values into float values
         		for value in range(len(returnedList)):
-        			returnedLIst[value] = list(returnedList[value])
-        			imo = retrunedList[value].pop(0)
+        			returnedList[value] = list(returnedList[value])
         			
-        			retrunedList[value][0] = float(returnedList[value][0])
         			returnedList[value][1] = float(returnedList[value][1])
+        			returnedList[value][2] = float(returnedList[value][2])
         			
-        		return dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
+        		return returnedList
+        		
+        		#dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
 
 	#Converts timestamp values to work with mysql table insertion
 	def convert_time(self, timestamp):
@@ -430,7 +429,10 @@ class DAOTest (unittest.TestCase):
 		result = dao.read_positions_tile3_port("Aabenraa", "Denmark")
 		self.assertTrue(type(result) is str)
 		
-	def test_
+	def test_read_last_five_positions(self):
+		dao = MessageDAO(True)
+		result = dao.read_last_five_positions(3048580000)
+		self.assertTrue(type(result) is int)
 
 	def test_convert_time(self):
 		dao = MessageDAO()
@@ -462,21 +464,21 @@ class DAOTest (unittest.TestCase):
 	def test_read_most_recent_positions2 (self):
 		dao = MessageDAO()
 		resultArray = dao.read_most_recent_positions()
-		self.assertEqual(list((219024178, 54.571808, 11.928697)), resultArray[0])
-		self.assertEqual(list((219015362, 57.120712, 8.599567)), resultArray[1])
+		self.assertEqual(list((266239000, 54.355473, 11.938282)), resultArray[0])
+		self.assertEqual(list((257820000, 54.677953, 12.56549)), resultArray[1])
 
 	def test_read_most_recent_pos_mmsi2(self):
 		dao = MessageDAO()
 		testMMSI = 304858000
 		resultArray = dao.read_most_recent_positions_MMSI(testMMSI)
-		self.assertEqual(list((304858000, 8214358, 55.21829, 13.372545)), resultArray[0])
+		self.assertEqual(list((304858000, 8214358, 55.21813, 13.375687)), resultArray[0])
 
 	def test_read_permanent_info2(self):
 		dao = MessageDAO()
 		testMMSI = 304858000
 		testIMO = 8214358
 		resultArray = dao.read_permanent_info(testMMSI, testIMO)
-		self.assertEqual(list((304858000, 8214358, 'St.Pauli', 55.21829, 13.372545)), resultArray[0])
+		self.assertEqual(list((304858000, 8214358, 'St.Pauli', 55.218332, 13.371672)), resultArray[0])
 
 	def test_read_port_with_name2(self):
 		dao = MessageDAO()
@@ -487,16 +489,31 @@ class DAOTest (unittest.TestCase):
 
 	def test_most_recent_in_tile2(self):
 		dao = MessageDAO()
-		expectedArray = [[220043000, 4026519, 57.120583, 8.599218],[220043000, 8996413, 57.120583, 8.599218]]
+		expectedArray1 = [219751000, 5362764, 57.122965, 8.601518]
+		expectedArray2 = [271043776, 9581019, 57.403747, 8.837135]
 		resultArray = dao.read_most_recent_in_tile(5139)
-		self.assertEqual(expectedArray, resultArray)
+		self.assertEqual(expectedArray1, resultArray[0])
+		self.assertEqual(expectedArray2, resultArray[1])
 
 	def test_read_positions_tile3_port2(self):
 		dao = MessageDAO()
-		expectedArray = [[219000647, 9080132, 55.04231, 9.423348]]
+		expectedArray1 = [219014875, 9548354, 55.042327, 9.424087]
+		expectedArray2 = [219000647, 9080132, 55.04233, 9.423305]
 		resultArray = dao.read_positions_tile3_port("Aabenraa", "Denmark")
+		self.assertEqual(expectedArray1, resultArray[0])
+		self.assertEqual(expectedArray2, resultArray[1])
+		
+	
+	def test_read_last_five_positions2(self):
+		dao = MessageDAO()
+		testMMSI = 304858000
+		expectedArray = [[8214358.0, 55.21813, 13.375687],
+		[8214358.0, 55.21815, 13.375427],
+		[8214358.0, 55.218187, 13.374555],
+		[8214358.0, 55.218238, 13.373680],
+		[8214358.0, 55.218268, 13.373070]]
+		resultArray = dao.read_last_five_positions(testMMSI)
 		self.assertEqual(expectedArray, resultArray)
-
 
 
 unittest.main()
