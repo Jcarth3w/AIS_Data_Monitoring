@@ -1,4 +1,4 @@
-#Contributors
+# Contributors
 Jack Carthew - jdcarthew@bsu.edu
 Gavin Neil - grneal@bsu.edu
 Dawson Vaal - dcvaal@bsu.edu
@@ -9,7 +9,7 @@ The work contained in this repository is for submission on the AIS Data Monitori
 # AIS_Data_Monitoring_Final_Project
 Final project for CS418. Monitors and stores AIS data from ships
 
-##Instructions for running the program
+## Instructions for running the program
 
 * The first step is to change the values of ```username``` and ```password``` in the ```config.ini``` file to your own credentials
 
@@ -21,7 +21,7 @@ Final project for CS418. Monitors and stores AIS data from ships
 
 * Once complete the data shoule be loaded and you are ready to run the tests.
 
-###BEFORE RUNNING THE TESTS###
+## BEFORE RUNNING THE TESTS
 
 * Ensure the year on your system clock is set to 2019
 
