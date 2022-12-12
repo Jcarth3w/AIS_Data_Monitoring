@@ -507,7 +507,9 @@ class MessageDAO:
 				returnedList[value][3] = float(returnedList[value][3])
 
 			return returnedList
-
+			
+	#Function takes an integer MMSI value
+	#Returns a list of ship documents in the form  {MMSI : '', Positions : [Lat : '', Long : ''], IMO : ''}
 	def read_last_five_positions(self, mmsi):
 		if self.test_mode:
 			try:
@@ -515,23 +517,82 @@ class MessageDAO:
 			except:
 				return -1
 		else:
+		
+			#Runs query through connection
+        		mmsiInQuery = []
+        		mmsiInQuery.append(mmsi)
+        		cnx = Mysql_connector.getConnection()
+        		cursor = cnx.cursor(prepared=True)
+        		cursor.execute("""SELECT am.MMSI, Latitude, Longitude, IMO FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
+        		
+        		queryList = cursor.fetchall()
+        		
+        		returnedList = []
+        		
+        		#Removes unwanted field in table
+			#Converts Latitude and Longitude values into float values
+        		for value in range(len(queryList)):
+        			queryList[value] = list(queryList[value])
+        			
+        			queryList[value][1] = float(queryList[value][1])
+        			queryList[value][2] = float(queryList[value][2])
+        			
+        			latitude = str(queryList[value][1])
+        			longitude = str(queryList[value][2])
+        			
+        			imo = queryList[value][3]
+        			returnedList.append({'MMSI' : mmsi, 'Positions' : '[Lat : '+ latitude +', Long : '+longitude+']', 'IMO' : imo})
+				
+        			
+        		return returnedList
+        		
+     
+     #Function takes an integer portID value
+     #Returns a list of ship documents in the form  {MMSI : '', Positions : [Lat : '', Long : ''], IMO : ''}
+	def read_ships_headed_to_port(self, portID):
+		if self.test_mode:
+			try:
+				return int(portID)
+			except:
+				return -1
+		else:
+			valuesForQuery = []
+			valuesForQuery.append(portID)
 			cnx = Mysql_connector.getConnection()
-
-			mmsiInQuery = []
-			mmsiInQuery.append(mmsi)
 			cursor = cnx.cursor(prepared=True)
-			cursor.execute("""SELECT IMO, Latitude, Longitude FROM POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE am.MMSI=%s AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC LIMIT 5;""", mmsiInQuery)
+			cursor.execute(""" SELECT DISTINCT am.MMSI, Ts, pr.Latitude, pr.Longitude, AIS_IMO FROM POSITION_REPORT as pr, AIS_MESSAGE as am, STATIC_DATA as sd, PORT WHERE PORT.Id=5018 AND pr.AISMessage_Id=am.Id AND sd.DestinationPort_Id=PORT.Id AND sd.AIS_IMO=am.VesselIMO ORDER BY Ts; """)
+			
+			queryList = cursor.fetchall()
+			
+			returnedList = []
+			#Removes unwanted field in table
+			#Formats values into a dictionary
+			for value in range(len(queryList)):
+				queryList[value] = list(queryList[value])
+				mmsi = queryList[value][0]
+				queryList[value].pop(1)
+				
 
-			returnedList = cursor.fetchall()
-			imo = 0
-			for value in range(len(returnedList)):
-				returnedList[value] = list(returnedList[value])
-				imo = returnedList[value].pop(0)
+				queryList[value][2] = float(queryList[value][2])
+				queryList[value][3] = float(queryList[value][3])
+				
+				latitude = str(queryList[value][1])
+				longitude = str(queryList[value][2])
+			
+				imo = queryList[value][3]
+				
+				returnedList.append({'MMSI' : mmsi, 'Positions' : '[Lat : '+ latitude +', Long : '+longitude+']', 'IMO' : imo})
 
-				returnedList[value][0] = float(returnedList[value][0])
-				returnedList[value][1] = float(returnedList[value][1])
+			return returnedList
+			
+			
+     			
+     
 
-			return dict({"MMSI": mmsi, "Positions": returnedList, "IMO": imo})
+	#Converts timestamp values to work with mysql table insertion
+	def convert_time(self, timestamp):
+		return str(timestamp).replace('T',' ').replace('Z', '')
+
 
 #connection class
 class Mysql_connector():
@@ -644,6 +705,16 @@ class DAOTest (unittest.TestCase):
 		dao = MessageDAO(True)
 		result = dao.read_positions_tile3_port("Aabenraa", "Denmark")
 		self.assertTrue(type(result) is str)
+		
+	def test_read_last_five_positions(self):
+		dao = MessageDAO(True)
+		result = dao.read_last_five_positions(3048580000)
+		self.assertTrue(type(result) is int)
+		
+	def test_read_ships_headed_to_port(self):
+		dao = MessageDAO(True)
+		result = dao.read_ships_headed_to_port(5018)
+		self.assertTrue(type(result) is int)
 
 	def test_convert_time(self):
 		dao = MessageDAO()
@@ -743,8 +814,28 @@ class DAOTest (unittest.TestCase):
 	
 	def test_pull_live_data_now(self):
 		dao = MessageDAO()
-		data = dao.pull_live_data()
-		inserted = dao.insert_messages(data)
+		testMMSI = 304858000
+		expectedArray = [{'MMSI' : 304858000, 'Positions' : '[Lat : 55.21813, Long : 13.375687]', 'IMO' : 8214358.0},
+		{'MMSI' : 304858000, 'Positions' : '[Lat : 55.21815, Long : 13.375427]', 'IMO' : 8214358.0},
+		{'MMSI' : 304858000 , 'Positions' : '[Lat : 55.218187, Long : 13.374555]', 'IMO' : 8214358.0},
+		{'MMSI' : 304858000, 'Positions' : '[Lat : 55.218238, Long : 13.37368]', 'IMO' : 8214358},
+		{'MMSI' : 304858000, 'Positions' : '[Lat : 55.218268, Long : 13.37307]', 'IMO' : 8214358}]
+		resultArray = dao.read_last_five_positions(testMMSI)
+		self.assertEqual(expectedArray, resultArray)
+		
+	def test_read_ships_headed_to_port2(self):
+		dao = MessageDAO()
+		testPortID = 5018
+		expectedArray = [{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161562, Long : 11.062797]', 'IMO' :8616087.0},
+		{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161338, Long : 11.062742]', 'IMO' :8616087.0},
+		{'MMSI' : 265011000, 'Positions' : '[Lat : 56.161087, Long : 11.062687]', 'IMO' : 8616087.0},
+	  	{'MMSI' : 265011000, 'Positions' : '[Lat : 56.160810, Long : 11.062633]', 'IMO' : 8616087.0}]
+		resultArray = dao.read_ships_headed_to_port(testPortID)
+		
+
+		self.assertEqual(expectedArray, resultArray)
+
+
 unittest.main()
 
 

@@ -14,6 +14,7 @@ def main():
 	dl.load_map_data()
 	dl.load_port_data()
 	dl.load_ais_messages()
+	dl.load_static_data()
 	dl.load_position_reports()
 	
 
@@ -38,7 +39,6 @@ class dataLoader:
 			vesselList[1:])
 
 			cnx.commit()
-			rowcount = cursor.rowcount
 			cnx.close()
 		
 	def load_map_data(self):
@@ -59,7 +59,6 @@ class dataLoader:
 			mapTileList[1:])
 
 			cnx.commit()
-			rowcount = cursor.rowcount
 			cnx.close()
 		
 	def load_port_data(self):
@@ -81,7 +80,6 @@ class dataLoader:
 			
 
 			cnx.commit()
-			rowcount = cursor.rowcount
 			cnx.close()
 
 	def load_ais_messages(self):
@@ -98,8 +96,6 @@ class dataLoader:
 							aisDataList[i][j] = None
 						tempList.append(aisDataList[i][j])
 					insertedList.append(tempList)
-
-			print(insertedList)
 			cnx = Mysql_connector.getConnection()
 			cursor = cnx.cursor(prepared=True)
 			print("\nLoading AIS Message data into database, please wait.")
@@ -108,9 +104,40 @@ class dataLoader:
 			%s, %s, %s, %s, %s, %s)""", insertedList[1:])
 
 			cnx.commit()
-			rowcount = cursor.rowcount
 			cnx.close()
 
+
+	def load_static_data(self):
+			with open('STATIC_DATA.csv', 'r') as object:
+				reader = csv.reader(object, delimiter =';')
+				staticDataList = list((reader))
+				insertedList = []
+				for i in range(1, 50):
+					staticDataList[i].pop(3)
+					staticDataList[i].pop(4)
+					staticDataList[i].pop(3)
+					staticDataList[i].pop(3)
+					staticDataList[i].pop(3)
+					staticDataList[i].pop(3)
+					staticDataList[i].pop(3)
+					staticDataList[i].pop(3)
+				
+					tempList = []
+					for j in range(len(staticDataList[i])):
+						if staticDataList[i][j] =='\\N':
+							staticDataList[i][j] = None
+						tempList.append(staticDataList[i][j])
+					insertedList.append(tempList)
+
+			#print(insertedList)
+			cnx = Mysql_connector.getConnection()
+			cursor = cnx.cursor(prepared=True)
+			print("\nLoading Static Data into database, please wait.")
+	
+			cursor.executemany("""INSERT INTO STATIC_DATA VALUES
+			(%s, %s, %s, %s)""", insertedList[1:])
+
+			cnx.commit()
 
 
 	def load_position_reports(self):
@@ -136,8 +163,7 @@ class dataLoader:
 			(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""", insertedList[1:])
 
 			cnx.commit()
-			cursor.execute("SELECT COUNT(*) FROM POSITION_REPORT")
-			rowcount = cursor.fetchall()[0][0]
+
 			
 			
 class Mysql_connector():

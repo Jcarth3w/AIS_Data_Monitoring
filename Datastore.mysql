@@ -82,7 +82,7 @@ create table AIS_MESSAGE(
  	AISMessage_Id mediumint unsigned,
  	AIS_IMO int,
  	CallSign varchar(8),
- 	DetinationPort_Id smallint,
+ 	DestinationPort_Id smallint,
  	foreign key (AISMessage_Id) references AIS_MESSAGE(Id) ON DELETE CASCADE,
  	primary key (AISMessage_Id)
  );
