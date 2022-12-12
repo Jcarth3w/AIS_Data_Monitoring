@@ -14,7 +14,7 @@ class MessageDAO:
 	def __init__(self, test_mode=False):
 		self.test_mode=test_mode
 		self.Mysql_connector = Mysql_connector()
-	
+
 	#def start_live_data_listen(self):
 	#	while True:
 	#		inserted = self.insert_messages(self.pull_live_data)
@@ -228,13 +228,13 @@ class MessageDAO:
 
 					try: rot = message['RoT']
 					except: rot = None
-					
+
 					try: sog = message['SoG']
 					except: sog = None
-					
-					try: cog = message['CoG'] 
+
+					try: cog = message['CoG']
 					except: cog = None
-					
+
 					try: heading = message['Heading']
 					except: heading = None
 
@@ -496,6 +496,21 @@ class MessageDAO:
 			valuesForQuery.append(country)
 			cnx = Mysql_connector.getConnection()
 			cursor = cnx.cursor(prepared=True)
+
+			#Checks how many matching ports are returned using the inputs,
+			#Then returns a list of port documents if there is more than one matching Port
+			cursor.execute("""SELECT * FROM PORT WHERE Name=%s AND Country=%s;""", valuesForQuery)
+			returnedList = cursor.fetchall()
+			if len(returnedList) > 1:
+				for value in range(len(returnedList)):
+					returnedList[value] = list((returnedList[value]))
+					returnedList[value].pop(6)
+
+					returnedList[value][4] = float(returnedList[value][4])
+					returnedList[value][5] = float(returnedList[value][5])
+				return returnedList
+
+			cursor.reset()
 			cursor.execute("""SELECT ves.MMSI, IMO, pr.Latitude, pr.Longitude FROM PORT, POSITION_REPORT as pr, AIS_MESSAGE as am, VESSEL as ves WHERE PORT.Name=%s AND PORT.Country=%s AND pr.MapView3_Id=PORT.MapView3_Id AND ves.MMSI=am.MMSI AND pr.AISMessage_id=am.Id ORDER BY Ts DESC;""", valuesForQuery)
 
 			returnedList = cursor.fetchall()
@@ -560,6 +575,20 @@ class MessageDAO:
 			valuesForQuery.append(portID)
 			cnx = Mysql_connector.getConnection()
 			cursor = cnx.cursor(prepared=True)
+			#Checks how many matching ports are returned using the inputs,
+			#Then returns a list of port documents if there is more than one matching Port
+			cursor.execute("""SELECT * FROM PORT WHERE Name=%s AND Country=%s;""", valuesForQuery)
+			returnedList = cursor.fetchall()
+			if len(returnedList) > 1:
+				for value in range(len(returnedList)):
+					returnedList[value] = list((returnedList[value]))
+					returnedList[value].pop(6)
+
+					returnedList[value][4] = float(returnedList[value][4])
+					returnedList[value][5] = float(returnedList[value][5])
+				return returnedList
+
+			cursor.reset()
 			cursor.execute(""" SELECT DISTINCT am.MMSI, Ts, pr.Latitude, pr.Longitude, AIS_IMO FROM POSITION_REPORT as pr, AIS_MESSAGE as am, STATIC_DATA as sd, PORT WHERE PORT.Id=5018 AND pr.AISMessage_Id=am.Id AND sd.DestinationPort_Id=PORT.Id AND sd.AIS_IMO=am.VesselIMO ORDER BY Ts; """)
 			
 			queryList = cursor.fetchall()
@@ -748,13 +777,13 @@ class DAOTest (unittest.TestCase):
 		self.assertEqual(2, rowsInserted)
 
 ########Integration Tests###########
-	
+
 	def test_insert_messages3 (self):
 		dao = MessageDAO()
 		statements = dao.insert_messages(self.batch1)
 
 		self.assertEqual(statements, 6)
-	
+
 	def test_insert_single_message(self):
 		dao = MessageDAO()
 		statements = dao.insert_messages(self.messageDocument)
