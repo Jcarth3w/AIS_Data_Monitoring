@@ -107,39 +107,3 @@ create table POSITION_REPORT(
 	foreign key (MapView3_Id) references MAP_VIEW(Id),
 	primary key (AISMessage_Id)
 );
-
-#User Table
-create table USER(
-	EmailAddress varchar(30),
-	Name varchar(20),
-	PasswordHash char(36),
-	ApplicationSetting1 bool,
-	ApplicationSetting2 varchar(50),
-	ApplicationSetting3 tinyint,
-	primary key (EmailAddress)
-);
-
-
-#Monitor_Port Table
-create table MONITOR_PORT(
-	User_EmailAddress varchar(30),
-	Port_Id smallint,
-	DateStarted datetime,
-	DateEnded datetime,
-	foreign key (User_EmailAddress) references USER(EmailAddress),
-	foreign key (Port_Id) references PORT(Id),
-	primary key (Port_Id)
-);
-
-
-
-#Monitor_Vessel Table
-create table MONITOR_VESSEL(
-	User_EmailAddress varchar(30),
-	Vessel_IMO mediumint unsigned,
-	DateStarted datetime,
-	DateEnded datetime,
-	foreign key (User_EmailAddress) references USER(EmailAddress),
-	foreign key (Vessel_IMO) references VESSEL(IMO),
-	primary key (Vessel_IMO)
-);

@@ -15,12 +15,17 @@ class MessageDAO:
 		self.test_mode=test_mode
 		self.Mysql_connector = Mysql_connector()
 
+	#loop for listening live data function
+	
 	#def start_live_data_listen(self):
 	#	while True:
 	#		inserted = self.insert_messages(self.pull_live_data)
 	#		print("Inserted " + str(inserted) + " messages")
 	#		time.sleep(1)
 
+	#Fuction has an optional parameter for a Timestamp
+	#Pulls a batch of AIS message data from server 'localhost:3000/AISFeed/' using HTTP
+	#If no timestamp is provided, current time will be used to grab data at that second
 	def pull_live_data(self, time = None):
 		databaseLink = "http://127.0.0.1:3000/AISFeed/"
 		nowTime = str(datetime.datetime.now()).replace(" ", "T")
@@ -34,73 +39,12 @@ class MessageDAO:
 		except: decoded = None
 
 		return decoded
-
-	def load_vessel_data(self):
-		with open('VESSEL.csv', 'r') as object:
-			reader = csv.reader(object)
-			vesselList = list((reader))
-			for i in range(1, len(vesselList)):
-				vesselList[i][0] = int(vesselList[i][0])
-				for j in range(len(vesselList[i])):
-					if vesselList[i][j] == '\\N':
-						vesselList[i][j] = None
-
-		cnx = Mysql_connector.getConnection()
-		cursor = cnx.cursor(prepared=True)
-		print("\nLoading VESSEL data into database, please wait.")
-
-		cursor.executemany("""INSERT INTO VESSEL VALUES
-		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-		vesselList[1:])
-
-		cnx.commit()
-		rowcount = cursor.rowcount
-		cnx.close()
-		return abs(rowcount)
-
-	def load_map_data(self):
-		with open('MAP_VIEW.csv', 'r') as object:
-			reader = csv.reader(object)
-			mapTileList = list((reader))
-			for i in range(1, len(mapTileList)):
-				for j in range(len(mapTileList[i])):
-					if mapTileList[i][j] == '\\N':
-						mapTileList[i][j] = None
-
-		cnx = Mysql_connector.getConnection()
-		cursor = cnx.cursor(prepared=True)
-		print("\nLoading MAP data into database, please wait.")
-
-		cursor.executemany("""INSERT INTO MAP_VIEW VALUES
-		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-		mapTileList[1:])
-
-		cnx.commit()
-		rowcount = cursor.rowcount
-		cnx.close()
-		return abs(rowcount)
-
-	def load_port_data(self):
-		with open('PORT.csv', 'r') as object:
-			reader = csv.reader(object, delimiter = ';')
-			portDataList = list((reader))
-			for i in range(1, len(portDataList)):
-				for j in range(len(portDataList[i])):
-					if portDataList[i][j] == '\\N':
-						portDataList[i][j] = None
-		cnx = Mysql_connector.getConnection()
-		cursor = cnx.cursor(prepared=True)
-
-		cursor.executemany("""INSERT INTO PORT VALUES
-		(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-		portDataList[1:])
-
-		cnx.commit()
-		rowcount = cursor.rowcount
-		cnx.close()
-		return abs(rowcount)
-
-
+	
+	#Function that takes a batch of AIS Messages OR a single AIS Message
+	#And inserts it into the database
+	#Can be either POSITION_REPORT or STATIC_DATA
+	#Returns amount of rows inserted
+	
 	def load_ais_messages(self):
 		with open('AIS_MESSAGE.csv', 'r') as object:
 			reader = csv.reader(object, delimiter =';')
@@ -115,11 +59,6 @@ class MessageDAO:
 						aisDataList[i][j] = None
 					tempList.append(aisDataList[i][j])
 				insertedList.append(tempList)
-
-
-
-
-		#print(insertedList)
 
 		cnx = Mysql_connector.getConnection()
 		cursor = cnx.cursor(prepared=True)
@@ -251,7 +190,9 @@ class MessageDAO:
 
 			return abs(rowcount - initalrowcount)
 
-
+	#Function that deletes entries in the AIS_MESSAGE table if their timestamp is more than 5 minutes old
+	#The corresponding STATIC_DATA or POSITION_REPORT entry should also be deleted
+	#Returns number of rows deleted
 	def delete_msg_timestamp (self):
 		if self.test_mode:
 			deleted = [10] * 10
@@ -259,6 +200,7 @@ class MessageDAO:
 			return len(deleted)
 
 		else:
+			#Runs query through connection
 			cnx = Mysql_connector.getConnection()
 
 			cursor = cnx.cursor(prepared=True)
@@ -268,6 +210,7 @@ class MessageDAO:
 
 			return cursor.rowcount
 
+	#Returns a list of ship documents in the form of (MMSI, Latitude, Longitude)
 	def read_most_recent_positions(self):
 		if self.test_mode:
 			shipDocument = [100000000, 11.232, 55.888]
@@ -282,6 +225,8 @@ class MessageDAO:
 
 			returnedList = cursor.fetchall()
 
+			#Removes unwanted field in table
+			#Converts Latitude and Longitude values into float values
 			for value in range(len(returnedList)):
 				returnedList[value] = list(returnedList[value])
 				returnedList[value].pop(1)
@@ -290,7 +235,9 @@ class MessageDAO:
 				returnedList[value][2] = float(returnedList[value][2])
 
 			return returnedList
-
+	
+	#Function takes an integer MMSI value
+	#Returns a list of ship documents in the form of (MMSI, IMO, Latitude, Longitude)
 	def read_most_recent_positions_MMSI(self, mmsi):
 		if self.test_mode:
 			try:
@@ -299,6 +246,7 @@ class MessageDAO:
 				return -1
 
 		else:
+			#Runs query through connection
 			cnx = Mysql_connector.getConnection()
 
 			mmsiInQuery = []
@@ -308,6 +256,8 @@ class MessageDAO:
 
 			returnedList = cursor.fetchall()
 
+			#Removes unwanted field in table
+			#Converts Latitude and Longitude values into float values
 			for value in range(len(returnedList)):
 				returnedList[value] = list(returnedList[value])
 				returnedList[value].pop(2)
@@ -317,6 +267,8 @@ class MessageDAO:
 
 			return returnedList
 
+	#Function takes an integer MMSI and IMO value
+	#Returns the vessel data for the matching MMSI and IMO in the form (MMSI, IMO, Name, Latitude, Longitude)
 	def read_permanent_info(self, MMSI, IMO):
 		if self.test_mode:
 			try:
@@ -324,7 +276,7 @@ class MessageDAO:
 			except:
 				return -1
 		else:
-
+			#Runs query through connection
 			valuesForQuery = []
 			valuesForQuery.append(MMSI)
 			valuesForQuery.append(IMO)
@@ -334,7 +286,7 @@ class MessageDAO:
 
 			returnedList = cursor.fetchall()
 
-
+			#Converts Latitude and Longitude values into float values
 			for value in range(len(returnedList)):
 				returnedList[value] = list((returnedList[value]))
 
@@ -344,93 +296,11 @@ class MessageDAO:
 
 			return returnedList
 
-
 	def convert_time(self, timestamp):
 		return str(timestamp).replace('T',' ').replace('Z', '')
 
-
-
-	def insert_single_message(self, message):
-		try:
-
-			array = json.loads(message)
-
-			newarray = []
-			if isinstance(array, dict):
-				newarray.append(array)
-				array = newarray
-
-		except Exception as e:
-			print(e)
-			return -1
-
-		if self.test_mode:
-			return len(array)
-		else:
-			cnx = Mysql_connector.getConnection()
-
-			cursor = cnx.cursor(prepared=True)
-
-			cursor.execute("SELECT COUNT(*) FROM AIS_MESSAGE")
-			initalrowcount = cursor.fetchall()[0][0]
-			cursor.reset()
-
-			for message in array:
-				#extract all the AIS_MESSAGE  and add them to the ais_message list
-				timeStamp = self.convert_time(message['Timestamp'])
-				shipClass = message['Class']
-				mmsi = message['MMSI']
-				msgType = message['MsgType']
-				cursor.execute("""INSERT INTO AIS_MESSAGE VALUES(%s, %s, %s, %s, %s, %s)""",
-							   list((None, datetime.datetime.fromisoformat(timeStamp), mmsi, shipClass, msgType, None)))
-				#if the message type is static data, extract all of the fields for static data
-				if msgType == "static_data":
-					imo = message['IMO']
-					if imo == 'Unknown':
-						imo = None
-
-					try:
-						callsign = message['CallSign']
-
-					except:
-						callsign = None
-
-					try:
-						destination_id = message['Destination']
-					except:
-						destination_id = None
-
-					cursor.execute("""INSERT INTO STATIC_DATA VALUES(LAST_INSERT_ID(), %s, %s, %s)""",
-								   list((imo, callsign, destination_id)))
-
-				#if the message type is position report extract all the fields and add them to associated list
-				elif msgType == "position_report":
-					position = message['Position']
-					coordinates = position['coordinates']
-					latitude = coordinates[0]
-					longitude = coordinates[1]
-					status = message['Status']
-					rot = message['RoT']
-					sog = message['SoG']
-					cog = message['CoG']
-					heading = message['Heading']
-
-					mapview3 = None
-					mapview2 = None
-					mapview1 = None
-
-
-			cursor.reset()
-			cnx.commit()
-			cursor.execute("SELECT COUNT(*) FROM AIS_MESSAGE")
-			rowcount = cursor.fetchall()[0][0]
-			cnx.close()
-
-			if abs(rowcount - initalrowcount)==1:
-				return True
-			else:
-				return abs(rowcount - initalrowcount)
-
+	#Function takes an integer Map Tile ID value
+	#Returns a list of ship documents in the form of (MMSI, IMO, Latitude, Longitude)
 	def read_most_recent_in_tile(self, tileID):
 		if self.test_mode:
 			try:
@@ -446,6 +316,7 @@ class MessageDAO:
 
 			returnedList = cursor.fetchall()
 
+			#Converts Latitude and Longitude values into float values
 			for value in range(len(returnedList)):
 				returnedList[value] = list((returnedList[value]))
 
@@ -455,6 +326,9 @@ class MessageDAO:
 
 			return returnedList
 
+	#Function takes string values Name and Country 
+	#Returns a list of Port data matching parameters 
+	#in the form (ID, LoCode, Name, Country, Longitude, Latitude, Mapview1_Id, Mapview2_Id, Mapview3_Id)
 	def read_ports_with_name(self, name, country):
 		if self.test_mode:
 			try:
@@ -463,6 +337,7 @@ class MessageDAO:
 				return -1
 
 		else:
+			#Runs query through connection
 			valuesForQuery = []
 			valuesForQuery.append(name)
 			valuesForQuery.append(country)
@@ -472,6 +347,8 @@ class MessageDAO:
 
 			returnedList = cursor.fetchall()
 
+			#Removes unwanted field in table
+			#Converts Latitude and Longitude values into float values
 			for value in range(len(returnedList)):
 				returnedList[value] = list((returnedList[value]))
 				returnedList[value].pop(6)
@@ -481,7 +358,8 @@ class MessageDAO:
 
 			return returnedList
 
-
+	#Function takes string values Port Name and Country
+	#Return a list of ship documents in the form of (MMSI, IMO, Latitude, Longitude)
 	def read_positions_tile3_port(self, port_name, country):
 		if self.test_mode:
 			try:
@@ -489,6 +367,7 @@ class MessageDAO:
 			except:
 				return -1
 
+		#Runs query through connection
 		else:
 
 			valuesForQuery = []
@@ -670,19 +549,6 @@ class DAOTest (unittest.TestCase):
 	messageDocument = """{\"Timestamp\":\"2022-12-06T15:00:00.000Z\",\"Class\":\"AtoN\",\"MMSI\":9999999,\"MsgType\":\"static_data\",\"IMO\":\"Unknown\",\"Name\":\"YAHOOTEST\",\"VesselType\":\"Undefined\",\"Length\":60,\"Breadth\":60,\"A\":30,\"B\":30,\"C\":30,\"D\":30}"""
 
 
-
-	#Test to delete all data from the Datastore. For testing purpose
-	def test_delete_all_messages(self):
-		cnx = Mysql_connector.getConnection()
-		cursor = cnx.cursor(prepared=True)
-		cursor.execute("""DELETE FROM AIS_MESSAGE;""")
-		cursor.execute("""DELETE FROM VESSEL;""")
-		cursor.execute("""DELETE FROM MAP_VIEW;""")
-		cursor.execute("""DELETE FROM PORT;""")
-		cnx.commit()
-		self.assertTrue(True)
-
-
 	#tests correct insertion type
 	def test_insert_messages (self):
 		dao = MessageDAO(True)
@@ -750,32 +616,7 @@ class DAOTest (unittest.TestCase):
 		convertedTime = "2020-11-18 00:00:00.000"
 		self.assertEqual(convertedTime, dao.convert_time("2020-11-18T00:00:00.000Z"))
 
-	def test_load_vessel_data(self):
-		dao = MessageDAO()
-		rowsInserted = dao.load_vessel_data()
-		self.assertEqual(204477, rowsInserted)
-
-	def test_load_map_data(self):
-		dao = MessageDAO()
-		rowsInserted = dao.load_map_data()
-		self.assertEqual(171, rowsInserted)
-
-	def test_load_port_data(self):
-		dao = MessageDAO()
-		rowsInserted = dao.load_port_data()
-		self.assertEqual(150, rowsInserted)
-
-	def test_load_position_reports(self):
-		dao = MessageDAO()
-		rowsInserted = dao.load_position_reports()
-		self.assertEqual(48, rowsInserted)
-
-	def test_load_ais_messages(self):
-
-		dao = MessageDAO()
-		rowsInserted = dao.load_ais_messages()
-		self.assertEqual(2, rowsInserted)
-
+	
 ########Integration Tests###########
 
 	def test_insert_messages3 (self):
@@ -836,6 +677,7 @@ class DAOTest (unittest.TestCase):
 		self.assertEqual(expectedArray, resultArray)
 
 	def test_pull_live_data(self):
+		#WILL NOT PASS UNLESS AIS MESSAGE SERVER IS RUNNING (index.js)
 		dao = MessageDAO()
 		data = dao.pull_live_data("2020-11-18T00:12:06Z")
 		inserted = dao.insert_messages(data)

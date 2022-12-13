@@ -129,7 +129,6 @@ class dataLoader:
 						tempList.append(staticDataList[i][j])
 					insertedList.append(tempList)
 
-			#print(insertedList)
 			cnx = Mysql_connector.getConnection()
 			cursor = cnx.cursor(prepared=True)
 			print("\nLoading Static Data into database, please wait.")
@@ -154,7 +153,6 @@ class dataLoader:
 						tempList.append(posReportDataList[i][j])
 					insertedList.append(tempList)
 
-			print(insertedList)
 			cnx = Mysql_connector.getConnection()
 			cursor = cnx.cursor(prepared=True)
 			print("\nLoading Position Report data into database, please wait.")
